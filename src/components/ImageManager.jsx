@@ -24,6 +24,7 @@ import {
   UploadHint,
   ImageInfoPopover,
   InfoIndicator,
+  DateLabel,
 } from "./ImageManager.styled";
 
 import { imageDB } from "../utils/imageDB";
@@ -524,12 +525,26 @@ const ImageManager = ({
                         onContextMenu={(e) => handleContextMenu(e, image)}
                       >
                         <Popover
-                          content={image.notes}
+                          content={
+                            <div
+                              style={{
+                                whiteSpace: "pre-wrap",
+                                maxWidth: "400px",
+                              }}
+                            >
+                              {image.notes}
+                            </div>
+                          }
                           title="图片笔记"
                           trigger="hover"
                           placement="right"
                           open={image.notes ? undefined : false}
                         >
+                          {image.dateCreated && (
+                            <DateLabel>
+                              {new Date(image.dateCreated).toLocaleDateString()}
+                            </DateLabel>
+                          )}
                           <img
                             src={image.url}
                             alt={image.name}

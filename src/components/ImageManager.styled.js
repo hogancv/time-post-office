@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
 export const Container = styled.div`
   width: 100%;
@@ -94,7 +94,7 @@ export const Stats = styled.div`
   background: #fff;
   padding: 15px 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin: 20px 0;
 
   p {
@@ -119,7 +119,7 @@ export const FilterBar = styled.div`
   background: #fff;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin: 20px 0;
   display: flex;
   gap: 20px;
@@ -150,7 +150,7 @@ export const Button = styled.button`
 
 export const MonthGroup = styled.div`
   margin: 30px 0 15px;
-  
+
   h2 {
     font-size: 1.5em;
     color: #333;
@@ -177,7 +177,8 @@ export const Dialog = styled.div`
     gap: 10px;
   }
 
-  input, textarea {
+  input,
+  textarea {
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -291,4 +292,15 @@ export const InfoIndicator = styled.div`
   &:hover {
     background: rgba(0, 0, 0, 0.8);
   }
-`; 
+`;
+
+export const DateLabel = styled.div`
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+`;

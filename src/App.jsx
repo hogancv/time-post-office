@@ -1,19 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import ImageManager from './components/ImageManager'
-import NotesView from './components/NotesView'
-import Sidebar from './components/Sidebar'
-import { imageDB } from './utils/imageDB'
-import './App.css'
+import React, { useState, useEffect, useCallback } from "react";
+import ImageManager from "./components/ImageManager";
+import NotesView from "./components/NotesView";
+import Sidebar from "./components/Sidebar";
+import { imageDB } from "./utils/imageDB";
+import "./App.css";
 
 function App() {
-  const [activePage, setActivePage] = useState('home');
-  const [activeFilter, setActiveFilter] = useState('');
+  const [activePage, setActivePage] = useState("home");
+  const [activeFilter, setActiveFilter] = useState("");
   const [images, setImages] = useState([]);
   const [showUploader, setShowUploader] = useState(true);
   const [noteCount, setNoteCount] = useState(0);
-  
+
   const fetchNoteCount = useCallback(() => {
-    const count = images.filter(img => img.notes && img.notes.trim().length > 0).length;
+    const count = images.filter(
+      (img) => img.notes && img.notes.trim().length > 0
+    ).length;
     setNoteCount(count);
   }, [images]);
 
@@ -25,19 +27,19 @@ function App() {
   // 监听 images 变化，更新笔记数量
   useEffect(() => {
     fetchNoteCount();
-  }, [fetchNoteCount]); 
+  }, [fetchNoteCount]);
 
   const handleFilterChange = (filter) => {
-    if (filter === 'hasNotes') {
-      setActivePage('notes');
+    if (filter === "hasNotes") {
+      setActivePage("notes");
     }
-    setActiveFilter(activeFilter === filter ? '' : filter);
+    setActiveFilter(activeFilter === filter ? "" : filter);
   };
 
   const handlePageChange = (page) => {
     setActivePage(page);
-    if (page !== 'notes') {
-      setActiveFilter('');
+    if (page !== "notes") {
+      setActiveFilter("");
     }
   };
 
@@ -46,37 +48,28 @@ function App() {
     setImages([]);
   };
 
-
   const handleMetadataUpdate = async (imagePath, updates) => {
     try {
       await imageDB.saveMetadata(imagePath, updates);
-      setImages(prevImages => 
-        prevImages.map(img => 
-          img.path === imagePath 
-            ? { ...img, ...updates }
-            : img
+      setImages((prevImages) =>
+        prevImages.map((img) =>
+          img.path === imagePath ? { ...img, ...updates } : img
         )
       );
     } catch (error) {
-      console.error('更新元数据失败:', error);
+      console.error("更新元数据失败:", error);
     }
   };
 
-  
   const renderContent = () => {
     switch (activePage) {
-      case 'notes':
+      case "notes":
         return (
-          <NotesView 
-            images={images}
-            onMetadataUpdate={handleMetadataUpdate}
-          />
+          <NotesView images={images} onMetadataUpdate={handleMetadataUpdate} />
         );
-      case 'categories':
-        return <div>类别页面（待开发）</div>;
       default:
         return (
-          <ImageManager 
+          <ImageManager
             images={images}
             setImages={setImages}
             activeFilter={activeFilter}
@@ -91,7 +84,7 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar 
+      <Sidebar
         activePage={activePage}
         activeFilter={activeFilter}
         onFilterChange={handleFilterChange}
@@ -100,7 +93,7 @@ function App() {
       />
       {renderContent()}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

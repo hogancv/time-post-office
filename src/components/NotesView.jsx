@@ -1,6 +1,10 @@
 import React, { useMemo, useState } from "react";
 import styled from "styled-components";
-import { Popover, message, Empty } from "antd";
+import { Popover, message, Empty, Button } from "antd"; // 导入Button
+import {
+  SortAscendingOutlined,
+  SortDescendingOutlined,
+} from "@ant-design/icons"; // 导入排序图标
 import { Title } from "./ImageManager.styled";
 import Viewer from "react-viewer";
 import DraggableNoteWindow from "./DraggableNoteWindow";
@@ -100,16 +104,58 @@ const EmptyContainer = styled.div`
   text-align: center;
 `;
 
+const DateLabel = styled.div`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+`;
+
+const SortButtonContainer = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+`;
+
 const NotesView = ({ images, onMetadataUpdate }) => {
   const [visible, setVisible] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [noteWindowVisible, setNoteWindowVisible] = useState(false);
   const [currentNoteContent, setCurrentNoteContent] = useState("");
   const [imagesData, setImagesData] = useState(images);
+  const [sortDirection, setSortDirection] = useState("desc"); // 默认降序，新的在前
+
+  const toggleSortDirection = () => {
+    setSortDirection(sortDirection === "desc" ? "asc" : "desc");
+  };
 
   const imagesWithNotes = useMemo(() => {
-    return imagesData.filter((img) => img.notes && img.notes.trim().length > 0);
-  }, [imagesData]);
+    const sortedImages = [...imagesData]
+      .filter((img) => img.notes && img.notes.trim().length > 0)
+      .sort((a, b) => {
+        // 先处理未知日期的情况
+        if (a.dateCreated === "未知" && b.dateCreated !== "未知") return 1;
+        if (a.dateCreated !== "未知" && b.dateCreated === "未知") return -1;
+        if (a.dateCreated === "未知" && b.dateCreated === "未知") return 0;
+
+        // 处理有日期的情况
+        const dateA = new Date(a.dateCreated);
+        const dateB = new Date(b.dateCreated);
+
+        // 根据排序方向决定比较方式
+        if (sortDirection === "desc") {
+          return dateB - dateA; // 降序，新的在前
+        } else {
+          return dateA - dateB; // 升序，旧的在前
+        }
+      });
+
+    return sortedImages;
+  }, [imagesData, sortDirection]);
 
   const handleMetadataUpdate = async (imagePath, updates) => {
     await onMetadataUpdate(imagePath, updates);
@@ -193,6 +239,23 @@ const NotesView = ({ images, onMetadataUpdate }) => {
     <NotesContainer>
       <ContentWrapper>
         <StyledTitle>笔记列表</StyledTitle>
+
+        <SortButtonContainer>
+          <Button
+            type="primary"
+            icon={
+              sortDirection === "desc" ? (
+                <SortDescendingOutlined />
+              ) : (
+                <SortAscendingOutlined />
+              )
+            }
+            onClick={toggleSortDirection}
+          >
+            {sortDirection === "desc" ? "时间降序" : "时间升序"}
+          </Button>
+        </SortButtonContainer>
+
         <StyledMasonry
           breakpointCols={breakpointColumns}
           className="masonry-grid"
@@ -204,6 +267,11 @@ const NotesView = ({ images, onMetadataUpdate }) => {
               onClick={() => onImageClick(index)}
             >
               <img src={image.url} alt={image.name || "图片"} loading="lazy" />
+              {image.dateCreated && (
+                <DateLabel>
+                  {new Date(image.dateCreated).toLocaleDateString()}
+                </DateLabel>
+              )}
               <NoteContent>
                 <Popover
                   content={
@@ -218,7 +286,6 @@ const NotesView = ({ images, onMetadataUpdate }) => {
                   }
                   trigger="hover"
                   placement="bottom"
-                  overlayStyle={{ maxWidth: "500px" }}
                 >
                   <p>
                     {image.notes?.length > 50
