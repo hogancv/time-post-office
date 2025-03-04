@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
 import styled from "styled-components";
-import { Popover, message } from "antd";
+import { Popover, message, Empty } from "antd";
 import { Title } from "./ImageManager.styled";
 import Viewer from "react-viewer";
 import DraggableNoteWindow from "./DraggableNoteWindow";
+import Masonry from "react-masonry-css";
 
 const NotesContainer = styled.div`
   flex: 1;
@@ -17,39 +18,86 @@ const NotesContainer = styled.div`
 const ContentWrapper = styled.div`
   width: 100%;
   max-width: 1400px;
+  background-color: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 `;
 
-const ImageGrid = styled.div`
+// 自定义瀑布流样式
+const StyledMasonry = styled(Masonry)`
   display: flex;
-  flex-direction: row;
-  overflow-x: auto;
-  gap: 20px;
-  padding: 20px 0;
+  width: 100%;
+  margin-left: -24px; /* 抵消列间距 */
+
+  .masonry-column {
+    padding-left: 24px; /* 列间距 */
+    background-clip: padding-box;
+  }
 `;
 
 const ImageCard = styled.div`
   position: relative;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: all 0.3s;
+  background-color: white;
+  margin-bottom: 24px; /* 卡片之间的垂直间距 */
 
   &:hover {
     transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
   }
 
   img {
     width: 100%;
-    height: 200px;
+    height: auto; /* 高度自适应，以适应瀑布流 */
     object-fit: cover;
   }
 `;
 
 const NoteContent = styled.div`
-  padding: 10px;
+  padding: 12px 16px;
   background: #f8f9fa;
   border-top: 1px solid #eee;
+  min-height: 60px;
+  max-height: 150px;
+  overflow: hidden;
+
+  p {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    color: #333;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+`;
+
+const StyledTitle = styled(Title)`
+  margin-bottom: 24px;
+  font-size: 24px;
+  color: #333;
+  position: relative;
+  padding-bottom: 10px;
+
+  &:after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 60px;
+    height: 3px;
+    background-color: #1890ff;
+  }
+`;
+
+const EmptyContainer = styled.div`
+  padding: 40px;
+  text-align: center;
 `;
 
 const NotesView = ({ images, onMetadataUpdate }) => {
@@ -133,11 +181,23 @@ const NotesView = ({ images, onMetadataUpdate }) => {
     }));
   }, [imagesWithNotes]);
 
+  // 确定不同屏幕宽度下的列数
+  const breakpointColumns = {
+    default: 4, // 默认4列
+    1400: 3, // 宽度 <= 1400px 时是3列
+    1100: 2, // 宽度 <= 1100px 时是2列
+    700: 1, // 宽度 <= 700px 时是1列
+  };
+
   return (
     <NotesContainer>
       <ContentWrapper>
-        <Title>笔记列表</Title>
-        <ImageGrid>
+        <StyledTitle>笔记列表</StyledTitle>
+        <StyledMasonry
+          breakpointCols={breakpointColumns}
+          className="masonry-grid"
+          columnClassName="masonry-column"
+        >
           {imagesWithNotes.map((image, index) => (
             <ImageCard
               key={image.path || index}
@@ -146,10 +206,19 @@ const NotesView = ({ images, onMetadataUpdate }) => {
               <img src={image.url} alt={image.name || "图片"} loading="lazy" />
               <NoteContent>
                 <Popover
-                  content={image.notes}
-                  title="完整笔记"
+                  content={
+                    <div style={{ whiteSpace: "pre-wrap", maxWidth: "400px" }}>
+                      {image.notes}
+                    </div>
+                  }
+                  title={
+                    <div style={{ fontWeight: "bold" }}>
+                      {image.name || "图片笔记"}
+                    </div>
+                  }
                   trigger="hover"
                   placement="bottom"
+                  overlayStyle={{ maxWidth: "500px" }}
                 >
                   <p>
                     {image.notes?.length > 50
@@ -160,11 +229,14 @@ const NotesView = ({ images, onMetadataUpdate }) => {
               </NoteContent>
             </ImageCard>
           ))}
-        </ImageGrid>
+        </StyledMasonry>
         {imagesWithNotes.length === 0 && (
-          <div style={{ textAlign: "center", padding: "40px" }}>
-            <p>暂无笔记</p>
-          </div>
+          <EmptyContainer>
+            <Empty
+              description="暂无笔记"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          </EmptyContainer>
         )}
       </ContentWrapper>
 

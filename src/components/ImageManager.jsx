@@ -263,9 +263,10 @@ const ImageManager = ({
   };
 
   // 预处理所有查看器图片数据，在图片过滤或排序后重新计算
-  const { allViewerImages, imageIndexMap } = useMemo(() => {
+  const { allViewerImages, imageIndexMap, indexToPathMap } = useMemo(() => {
     const allImages = [];
     const indexMap = new Map(); // 用于存储每个图片路径到全局索引的映射
+    const pathMap = new Map(); // 用于存储全局索引到图片路径的映射
 
     let globalIndex = 0;
     Object.values(groupedImages).forEach((monthImages) => {
@@ -274,13 +275,19 @@ const ImageManager = ({
           src: image.url,
           alt: image.name || "",
           notes: image.notes || "暂无笔记",
+          path: image.path, // 添加路径信息到查看器数据中
         });
         indexMap.set(image.path, globalIndex);
+        pathMap.set(globalIndex, image.path);
         globalIndex++;
       });
     });
 
-    return { allViewerImages: allImages, imageIndexMap: indexMap };
+    return {
+      allViewerImages: allImages,
+      imageIndexMap: indexMap,
+      indexToPathMap: pathMap,
+    };
   }, [groupedImages]);
 
   // 更新查看器图片数组当筛选或排序发生变化时
@@ -301,27 +308,55 @@ const ImageManager = ({
   // 处理图片切换
   const handleImageChange = (activeImage, index) => {
     setActiveIndex(index);
-    setCurrentNoteContent(activeImage.notes);
 
-    // 找到与当前索引对应的完整图片对象并设置为selectedImage
-    const currentPath = Object.entries(imageIndexMap).find(
-      ([, idx]) => idx === index
-    )?.[0];
+    // 使用当前索引找到对应图片的路径
+    const currentPath = indexToPathMap.get(index);
+
     if (currentPath) {
+      // 使用路径找到完整的图片对象
       const currentImage = images.find((img) => img.path === currentPath);
+
       if (currentImage) {
         setSelectedImage(currentImage);
+        setCurrentNoteContent(currentImage.notes || "");
+      } else {
+        console.warn("未找到路径对应的图片:", currentPath);
       }
+    } else {
+      console.warn("未找到索引对应的路径:", index);
     }
   };
 
   // 保存笔记
-  const handleSaveNote = (newNoteContent) => {
+  const handleSaveNote = async (newNoteContent) => {
     if (selectedImage) {
-      const updatedImage = { ...selectedImage, notes: newNoteContent };
-      handleMetadataUpdate(selectedImage.path, { notes: newNoteContent });
+      // 获取当前真实的选中图片
+      const currentPath = indexToPathMap.get(activeIndex);
+      let imageToUpdate = selectedImage;
+
+      // 如果路径与当前选中的图片不一致，重新获取正确的图片对象
+      if (currentPath && currentPath !== selectedImage.path) {
+        const correctImage = images.find((img) => img.path === currentPath);
+        if (correctImage) {
+          imageToUpdate = correctImage;
+        }
+      }
+
+      // 更新图片的笔记内容
+      const updatedImage = { ...imageToUpdate, notes: newNoteContent };
+      await handleMetadataUpdate(imageToUpdate.path, { notes: newNoteContent });
+
+      // 更新状态
       setSelectedImage(updatedImage);
       setCurrentNoteContent(newNoteContent);
+
+      // 更新viewerImages中的笔记内容
+      const updatedViewerImages = [...viewerImages];
+      updatedViewerImages[activeIndex] = {
+        ...updatedViewerImages[activeIndex],
+        notes: newNoteContent,
+      };
+      setViewerImages(updatedViewerImages);
     }
   };
 
