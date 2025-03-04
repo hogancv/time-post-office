@@ -186,4 +186,109 @@ export const Dialog = styled.div`
   textarea {
     min-height: 100px;
   }
+`;
+
+export const MainContainer = styled.div`
+  display: flex;
+  min-height: 100vh;
+`;
+
+export const ContentContainer = styled.div`
+  flex: 1;
+  margin-left: 200px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+export const Title = styled.h1`
+  text-align: center;
+  margin: 20px 0;
+  color: #333;
+  font-size: 24px;
+  width: 100%;
+`;
+
+export const ContentWrapper = styled.div`
+  width: 100%;
+  max-width: 1400px;
+`;
+
+export const UploadBox = styled.div`
+  padding: 40px 20px;
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  margin-bottom: 20px;
+  background-color: #fafafa;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 200px;
+  justify-content: center;
+
+  &:hover {
+    border-color: #1890ff;
+    background-color: #f0f7ff;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+  }
+`;
+
+export const UploadIcon = styled.svg`
+  transition: transform 0.3s ease;
+
+  ${UploadBox}:hover & {
+    transform: translateY(-5px);
+  }
+`;
+
+export const UploadText = styled.p`
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+  transition: color 0.3s ease;
+
+  ${UploadBox}:hover & {
+    color: #1890ff;
+  }
+`;
+
+export const UploadHint = styled.p`
+  font-size: 14px;
+  color: #999;
+  margin: 0;
+`;
+
+export const ImageInfoPopover = styled.div`
+  max-width: 300px;
+
+  p {
+    margin: 4px 0;
+    font-size: 14px;
+  }
+`;
+
+export const InfoIndicator = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 14px;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.8);
+  }
 `; 

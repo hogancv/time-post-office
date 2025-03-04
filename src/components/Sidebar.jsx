@@ -32,7 +32,7 @@ const MenuItem = styled.div`
   `}
 `;
 
-const Sidebar = ({ activePage, activeFilter, onFilterChange, onPageChange }) => {
+const Sidebar = ({ activePage, activeFilter, onFilterChange, onPageChange, noteCount }) => {
   return (
     <SidebarContainer>
       <MenuItem 
@@ -58,6 +58,9 @@ const Sidebar = ({ activePage, activeFilter, onFilterChange, onPageChange }) => 
       >
         <FileTextOutlined />
         <span>笔记</span>
+        <span style={{ marginLeft: 'auto', color: 'rgba(255, 255, 255, 0.65)' }}>
+          {noteCount}
+        </span>
       </MenuItem>
     </SidebarContainer>
   );

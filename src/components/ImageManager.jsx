@@ -1,19 +1,12 @@
-import React, {
-  useState,
-  useRef,
-  useMemo,
-  useEffect,
-  } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 
 import Viewer from "react-viewer";
 
 import exifr from "exifr";
 
 import {
-  Container,
   ImageGrid,
   ImageCard,
-  ImageInfo,
   Stats,
   Loading,
   ErrorMessage,
@@ -21,128 +14,32 @@ import {
   Select,
   Button,
   MonthGroup,
+  MainContainer,
+  ContentContainer,
+  Title,
+  ContentWrapper,
+  UploadBox,
+  UploadIcon,
+  UploadText,
+  UploadHint,
+  ImageInfoPopover,
+  InfoIndicator,
 } from "./ImageManager.styled";
 
-import { imageDB } from '../utils/imageDB';
-import EditDialog from './EditDialog';
-import ContextMenu from './ContextMenu';
-import { Popover } from 'antd';
-import styled from 'styled-components';
+import { imageDB } from "../utils/imageDB";
+import EditDialog from "./EditDialog";
+import ContextMenu from "./ContextMenu";
+import { Popover } from "antd";
+import NotesView from './NotesView';
 
-const UploadBox = styled.div`
-  padding: 40px 20px;
-  border: 2px dashed #d9d9d9;
-  border-radius: 8px;
-  cursor: pointer;
-  text-align: center;
-  margin-bottom: 20px;
-  background-color: #fafafa;
-  transition: all 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  min-height: 200px;
-  justify-content: center;
-
-  &:hover {
-    border-color: #1890ff;
-    background-color: #f0f7ff;
-    transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
-  }
-`;
-
-const UploadIcon = styled.svg`
-  transition: transform 0.3s ease;
-  
-  ${UploadBox}:hover & {
-    transform: translateY(-5px);
-  }
-`;
-
-const UploadText = styled.p`
-  font-size: 16px;
-  color: #666;
-  margin: 0;
-  transition: color 0.3s ease;
-
-  ${UploadBox}:hover & {
-    color: #1890ff;
-  }
-`;
-
-const UploadHint = styled.p`
-  font-size: 14px;
-  color: #999;
-  margin: 0;
-`;
-
-const ImageInfoPopover = styled.div`
-  max-width: 300px;
-  
-  p {
-    margin: 4px 0;
-    font-size: 14px;
-  }
-`;
-
-const InfoIndicator = styled.div`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: white;
-  font-size: 14px;
-  
-  &:hover {
-    background: rgba(0, 0, 0, 0.8);
-  }
-`;
-
-const MainContainer = styled.div`
-  display: flex;
-  min-height: 100vh;
-`;
-
-const ContentContainer = styled.div`
-  flex: 1;
-  margin-left: 200px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const Title = styled.h1`
-  text-align: center;
-  margin: 20px 0;
-  color: #333;
-  font-size: 24px;
-  width: 100%;
-`;
-
-const ContentWrapper = styled.div`
-  width: 100%;
-  max-width: 1400px;
-`;
-
-const ImageManager = ({ 
-  images, 
-  setImages, 
-  activeFilter, 
-  onImageClick,
+const ImageManager = ({
+  images,
+  setImages,
+  activeFilter,
   onMetadataUpdate,
   showUploader,
   setShowUploader,
-  onReset
+  onReset,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -188,13 +85,15 @@ const ImageManager = ({
   const groupedImages = useMemo(() => {
     // 首先根据筛选条件过滤图片
     let filtered = images;
-    if (activeFilter === 'hasNotes') {
-      filtered = images.filter(img => img.notes && img.notes.trim().length > 0);
+    if (activeFilter === "hasNotes") {
+      filtered = images.filter(
+        (img) => img.notes && img.notes.trim().length > 0
+      );
     }
 
     // 然后根据相机型号筛选
     filtered = filtered.filter(
-      img => selectedModel === "all" || img.model === selectedModel
+      (img) => selectedModel === "all" || img.model === selectedModel
     );
 
     // 排序逻辑保持不变
@@ -245,8 +144,6 @@ const ImageManager = ({
   useEffect(() => {
     imageDB.init().catch(console.error);
   }, []);
-
-
 
   const getExifData = async (file) => {
     try {
@@ -317,10 +214,10 @@ const ImageManager = ({
           try {
             const exifData = await getExifData(file);
             const imagePath = file.webkitRelativePath || file.name;
-            
+
             // 获取存储的元数据
             const savedMetadata = await imageDB.getMetadata(imagePath);
-            
+
             const imageData = {
               name: file.name,
               path: imagePath,
@@ -330,9 +227,9 @@ const ImageManager = ({
               size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
               ...exifData,
               // 使用保存的元数据覆盖默认值
-              ...(savedMetadata || {})
+              ...(savedMetadata || {}),
             };
-            
+
             return imageData;
           } catch (error) {
             console.error("处理图片失败:", error);
@@ -347,7 +244,6 @@ const ImageManager = ({
         setError("无法处理所选图片，请重试");
       } else {
         setImages(validImages);
-
         setShowUploader(false);
       }
     } catch (error) {
@@ -358,7 +254,6 @@ const ImageManager = ({
 
     setIsLoading(false);
   };
-
 
   const handleReset = () => {
     onReset();
@@ -371,13 +266,13 @@ const ImageManager = ({
   const handleImageClick = (monthKey, index) => {
     // 准备查看器需要的图片数据
     const allImages = [];
-    
+
     Object.values(groupedImages).forEach((monthImages) => {
       monthImages.forEach((image) => {
         allImages.push({
           src: image.url,
-          alt: image.name || '',
-          title: image.name || '',
+          alt: image.name || "",
+          title: image.name || "",
           description: `拍摄时间：${image.dateCreated}\n相机型号：${image.model}`,
         });
       });
@@ -408,14 +303,14 @@ const ImageManager = ({
     try {
       const blob = await imageDB.exportConfig();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'image-metadata-config.json';
+      a.download = "image-metadata-config.json";
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('导出配置失败:', error);
-      setError('导出配置失败，请重试');
+      console.error("导出配置失败:", error);
+      setError("导出配置失败，请重试");
     }
   };
 
@@ -424,13 +319,13 @@ const ImageManager = ({
     try {
       const file = event.target.files[0];
       if (!file) return;
-      
+
       await imageDB.importConfig(file);
       // 重新加载图片列表
       handleFolderSelect({ target: { files: inputRef.current.files } });
     } catch (error) {
-      console.error('导入配置失败:', error);
-      setError('导入配置失败，请检查文件格式');
+      console.error("导入配置失败:", error);
+      setError("导入配置失败，请检查文件格式");
     }
   };
 
@@ -439,12 +334,15 @@ const ImageManager = ({
     e.preventDefault();
     setContextMenu({
       x: e.clientX,
-      y: e.clientY
+      y: e.clientY,
     });
     // 如果拍摄时间是"未知"，设置为当前时间
     const imageWithDefaultDate = {
       ...image,
-      dateCreated: image.dateCreated === "未知" ? new Date().toLocaleString() : image.dateCreated
+      dateCreated:
+        image.dateCreated === "未知"
+          ? new Date().toLocaleString()
+          : image.dateCreated,
     };
     setSelectedImage(imageWithDefaultDate);
   };
@@ -452,7 +350,7 @@ const ImageManager = ({
   return (
     <MainContainer>
       <ContentContainer>
-        <h1>图片管理器</h1>
+        <Title>图片管理器</Title>
         <ContentWrapper>
           {showUploader ? (
             <UploadBox
@@ -468,12 +366,12 @@ const ImageManager = ({
                 id="folder-input"
                 multiple
                 accept="image/*"
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
               />
-              <UploadIcon 
-                viewBox="0 0 24 24" 
-                width="48" 
-                height="48" 
+              <UploadIcon
+                viewBox="0 0 24 24"
+                width="48"
+                height="48"
                 stroke="#1890ff"
                 fill="none"
                 strokeWidth="2"
@@ -518,10 +416,14 @@ const ImageManager = ({
                   type="file"
                   accept=".json"
                   onChange={handleImportConfig}
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                   id="config-import"
                 />
-                <Button onClick={() => document.getElementById('config-import').click()}>
+                <Button
+                  onClick={() =>
+                    document.getElementById("config-import").click()
+                  }
+                >
                   导入配置
                 </Button>
               </FilterBar>
@@ -548,12 +450,18 @@ const ImageManager = ({
                           placement="right"
                           open={image.notes ? undefined : false}
                         >
-                          <img src={image.url} alt={image.name} loading="lazy" />
+                          <img
+                            src={image.url}
+                            alt={image.name}
+                            loading="lazy"
+                          />
                         </Popover>
                         <Popover
                           content={
                             <ImageInfoPopover>
-                              <p><strong>{image.name}</strong></p>
+                              <p>
+                                <strong>{image.name}</strong>
+                              </p>
                               <p>路径：{image.path}</p>
                               <p>类型：{image.type}</p>
                               <p>大小：{image.size}</p>
@@ -568,10 +476,42 @@ const ImageManager = ({
                           trigger="hover"
                           placement="right"
                         >
-                          <InfoIndicator>
+                          <InfoIndicator
+                            style={{
+                              position: "absolute",
+                              top: "8px",
+                              right: "8px",
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingImage({
+                                ...image,
+                                dateCreated: image.dateCreated === "未知" ? new Date().toLocaleString() : image.dateCreated,
+                                editMode: "properties",
+                              });
+                            }}
+                          >
                             ℹ️
                           </InfoIndicator>
                         </Popover>
+                        {image.notes && (
+                          <InfoIndicator
+                            style={{
+                              position: "absolute",
+                              top: "8px",
+                              right: "36px",
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingImage({
+                                ...image,
+                                editMode: "note",
+                              });
+                            }}
+                          >
+                            📝
+                          </InfoIndicator>
+                        )}
                       </ImageCard>
                     ))}
                   </ImageGrid>
@@ -589,7 +529,7 @@ const ImageManager = ({
                 rotatable={true}
                 scalable={true}
                 onError={(err) => {
-                  console.error('图片加载错误:', err);
+                  console.error("图片加载错误:", err);
                   setVisible(false);
                 }}
                 noNavbar={false}
@@ -620,18 +560,20 @@ const ImageManager = ({
                     setContextMenu(null);
                     setEditingImage({
                       ...selectedImage,
-                      editMode: 'note'
+                      editMode: "note",
                     });
                   }}
                   onPropertiesClick={() => {
                     setContextMenu(null);
                     setEditingImage({
                       ...selectedImage,
-                      editMode: 'properties'
+                      editMode: "properties",
                     });
                   }}
                 />
               )}
+
+              <NotesView images={images} />
             </>
           )}
 
@@ -642,11 +584,7 @@ const ImageManager = ({
             </Loading>
           )}
 
-          {error && (
-            <ErrorMessage>
-              {error}
-            </ErrorMessage>
-          )}
+          {error && <ErrorMessage>{error}</ErrorMessage>}
         </ContentWrapper>
       </ContentContainer>
     </MainContainer>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import ImageManager from './components/ImageManager'
 import NotesView from './components/NotesView'
 import Sidebar from './components/Sidebar'
@@ -9,13 +9,23 @@ function App() {
   const [activePage, setActivePage] = useState('home');
   const [activeFilter, setActiveFilter] = useState('');
   const [images, setImages] = useState([]);
-  const [selectedImage, setSelectedImage] = useState(null);
   const [showUploader, setShowUploader] = useState(true);
+  const [noteCount, setNoteCount] = useState(0);
   
+  const fetchNoteCount = useCallback(() => {
+    const count = images.filter(img => img.notes && img.notes.trim().length > 0).length;
+    setNoteCount(count);
+  }, [images]);
+
   // 初始化 IndexedDB
   useEffect(() => {
     imageDB.init().catch(console.error);
   }, []);
+
+  // 监听 images 变化，更新笔记数量
+  useEffect(() => {
+    fetchNoteCount();
+  }, [fetchNoteCount]); 
 
   const handleFilterChange = (filter) => {
     if (filter === 'hasNotes') {
@@ -36,10 +46,6 @@ function App() {
     setImages([]);
   };
 
-  const handleImageClick = (image) => {
-    setSelectedImage(image);
-    // 这里可以添加查看图片的逻辑
-  };
 
   const handleMetadataUpdate = async (imagePath, updates) => {
     try {
@@ -55,6 +61,7 @@ function App() {
       console.error('更新元数据失败:', error);
     }
   };
+
   
   const renderContent = () => {
     switch (activePage) {
@@ -62,7 +69,6 @@ function App() {
         return (
           <NotesView 
             images={images}
-            onImageClick={handleImageClick}
             onMetadataUpdate={handleMetadataUpdate}
           />
         );
@@ -74,7 +80,6 @@ function App() {
             images={images}
             setImages={setImages}
             activeFilter={activeFilter}
-            onImageClick={handleImageClick}
             onMetadataUpdate={handleMetadataUpdate}
             showUploader={showUploader}
             setShowUploader={setShowUploader}
@@ -91,6 +96,7 @@ function App() {
         activeFilter={activeFilter}
         onFilterChange={handleFilterChange}
         onPageChange={handlePageChange}
+        noteCount={noteCount}
       />
       {renderContent()}
     </div>

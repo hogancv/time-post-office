@@ -1,6 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { Popover } from 'antd';
+import { Title } from './ImageManager.styled';
+import Viewer from 'react-viewer';
 
 const NotesContainer = styled.div`
   flex: 1;
@@ -17,8 +19,9 @@ const ContentWrapper = styled.div`
 `;
 
 const ImageGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
   gap: 20px;
   padding: 20px 0;
 `;
@@ -48,20 +51,28 @@ const NoteContent = styled.div`
   border-top: 1px solid #eee;
 `;
 
-const NotesView = ({ images, onImageClick, onMetadataUpdate }) => {
+const NotesView = ({ images }) => {
+  const [visible, setVisible] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   const imagesWithNotes = useMemo(() => {
     return images.filter(img => img.notes && img.notes.trim().length > 0);
   }, [images]);
 
+  const onImageClick = (index) => {
+    setCurrentIndex(index);
+    setVisible(true);
+  };
+
   return (
     <NotesContainer>
       <ContentWrapper>
-        <h1>笔记列表</h1>
+        <Title>笔记列表</Title>
         <ImageGrid>
-          {imagesWithNotes.map((image) => (
+          {imagesWithNotes.map((image, index) => (
             <ImageCard 
               key={image.path} 
-              onClick={() => onImageClick(image)}
+              onClick={() => onImageClick(index)}
             >
               <img src={image.url} alt={image.name} loading="lazy" />
               <NoteContent>
@@ -69,9 +80,9 @@ const NotesView = ({ images, onImageClick, onMetadataUpdate }) => {
                   content={image.notes}
                   title="完整笔记"
                   trigger="hover"
-                  placement="right"
+                  placement="bottom"
                 >
-                  <p>{image.notes.slice(0, 50)}...</p>
+                  <p>{image.notes.length > 50 ? `${image.notes.slice(0, 50)}...` : image.notes}</p>
                 </Popover>
               </NoteContent>
             </ImageCard>
@@ -83,6 +94,15 @@ const NotesView = ({ images, onImageClick, onMetadataUpdate }) => {
           </div>
         )}
       </ContentWrapper>
+      <Viewer
+        visible={visible}
+        onClose={() => {
+          setVisible(false);
+        }}
+        images={imagesWithNotes.map(img => ({ src: img.url, alt: img.name }))}
+        activeIndex={currentIndex}
+        onMaskClick={() => setVisible(false)}
+      />
     </NotesContainer>
   );
 };
