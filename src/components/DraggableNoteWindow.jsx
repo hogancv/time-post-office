@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import styled from 'styled-components';
-import { Button } from 'antd';
+import { Button, message } from 'antd';
 import Draggable from 'react-draggable';
 
 const WindowContainer = styled.div`
@@ -33,6 +33,31 @@ const WindowContent = styled.div`
   line-height: 1.6;
 `;
 
+const NoteTextArea = styled.textarea`
+  width: 100%;
+  min-height: 150px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+  
+  &:focus {
+    outline: none;
+    border-color: #40a9ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  }
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+`;
+
 /**
  * 可拖动笔记窗口组件
  * @param {Object} props
@@ -44,6 +69,8 @@ const WindowContent = styled.div`
  * @param {string} props.headerColor - 标题栏颜色
  * @param {number} props.width - 窗口宽度
  * @param {number} props.maxHeight - 内容区最大高度
+ * @param {function} props.onSave - 保存笔记回调
+ * @param {boolean} props.editable - 是否可编辑
  */
 const DraggableNoteWindow = ({
   title = "笔记",
@@ -53,9 +80,35 @@ const DraggableNoteWindow = ({
   defaultPosition = { x: 100, y: 100 },
   headerColor = "#1890ff",
   width = 300,
-  maxHeight = 300
+  maxHeight = 300,
+  onSave,
+  editable = false
 }) => {
   const nodeRef = useRef(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState(content);
+
+  // 当content变化时，更新editedContent
+  React.useEffect(() => {
+    setEditedContent(content);
+  }, [content]);
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedContent(content); // 恢复原内容
+  };
+
+  const handleSave = () => {
+    if (onSave) {
+      onSave(editedContent);
+      message.success('笔记已保存！');
+    }
+    setIsEditing(false);
+  };
 
   if (!visible) return null;
 
@@ -64,19 +117,45 @@ const DraggableNoteWindow = ({
       <WindowContainer ref={nodeRef} defaultPosition={defaultPosition} width={width}>
         <WindowHeader className="window-handle" headerColor={headerColor}>
           <span>{title}</span>
-          {onClose && (
-            <Button 
-              type="text" 
-              size="small" 
-              style={{ color: 'white' }} 
-              onClick={onClose}
-            >
-              ✕
-            </Button>
-          )}
+          <div>
+            {!isEditing && editable && (
+              <Button 
+                type="text" 
+                size="small" 
+                style={{ color: 'white', marginRight: 8 }} 
+                onClick={handleEditClick}
+              >
+                编辑
+              </Button>
+            )}
+            {onClose && (
+              <Button 
+                type="text" 
+                size="small" 
+                style={{ color: 'white' }} 
+                onClick={onClose}
+              >
+                ✕
+              </Button>
+            )}
+          </div>
         </WindowHeader>
         <WindowContent maxHeight={maxHeight}>
-          {content}
+          {isEditing ? (
+            <>
+              <NoteTextArea 
+                value={editedContent}
+                onChange={(e) => setEditedContent(e.target.value)}
+                placeholder="编辑笔记内容..."
+              />
+              <ButtonGroup>
+                <Button onClick={handleCancelEdit}>取消</Button>
+                <Button type="primary" onClick={handleSave}>保存</Button>
+              </ButtonGroup>
+            </>
+          ) : (
+            content
+          )}
         </WindowContent>
       </WindowContainer>
     </Draggable>

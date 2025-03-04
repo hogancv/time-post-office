@@ -30,7 +30,7 @@ import { imageDB } from "../utils/imageDB";
 import EditDialog from "./EditDialog";
 import ContextMenu from "./ContextMenu";
 import { Popover } from "antd";
-import NotesView from './NotesView';
+import DraggableNoteWindow from "./DraggableNoteWindow";
 
 const ImageManager = ({
   images,
@@ -48,15 +48,16 @@ const ImageManager = ({
   const inputRef = useRef(null);
 
   const [visible, setVisible] = useState(false);
-
   const [activeIndex, setActiveIndex] = useState(0);
-
   const [viewerImages, setViewerImages] = useState([]);
 
   const [editingImage, setEditingImage] = useState(null);
 
   const [contextMenu, setContextMenu] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+
+  const [noteWindowVisible, setNoteWindowVisible] = useState(false);
+  const [currentNoteContent, setCurrentNoteContent] = useState("");
 
   // 获取所有不重复的相机型号
 
@@ -261,36 +262,67 @@ const ImageManager = ({
     setSortOrder("desc");
   };
 
-  // 处理图片点击
-
-  const handleImageClick = (monthKey, index) => {
-    // 准备查看器需要的图片数据
+  // 预处理所有查看器图片数据，在图片过滤或排序后重新计算
+  const { allViewerImages, imageIndexMap } = useMemo(() => {
     const allImages = [];
+    const indexMap = new Map(); // 用于存储每个图片路径到全局索引的映射
 
+    let globalIndex = 0;
     Object.values(groupedImages).forEach((monthImages) => {
       monthImages.forEach((image) => {
         allImages.push({
           src: image.url,
           alt: image.name || "",
-          title: image.name || "",
-          description: `拍摄时间：${image.dateCreated}\n相机型号：${image.model}`,
+          notes: image.notes || "暂无笔记",
         });
+        indexMap.set(image.path, globalIndex);
+        globalIndex++;
       });
     });
 
-    // 计算在所有图片中的索引
-    let globalIndex = 0;
-    for (const [key, images] of Object.entries(groupedImages)) {
-      if (key === monthKey) {
-        globalIndex += index;
-        break;
-      }
-      globalIndex += images.length;
-    }
+    return { allViewerImages: allImages, imageIndexMap: indexMap };
+  }, [groupedImages]);
 
-    setViewerImages(allImages);
-    setActiveIndex(globalIndex);
+  // 更新查看器图片数组当筛选或排序发生变化时
+  useEffect(() => {
+    setViewerImages(allViewerImages);
+  }, [allViewerImages]);
+
+  // 处理图片点击 - 简化版
+  const handleImageClick = (image) => {
+    const index = imageIndexMap.get(image.path);
+    setActiveIndex(index);
+    setCurrentNoteContent(image.notes || "");
+    setSelectedImage(image); // 添加这一行以确保selectedImage被正确设置
     setVisible(true);
+    setNoteWindowVisible(true);
+  };
+
+  // 处理图片切换
+  const handleImageChange = (activeImage, index) => {
+    setActiveIndex(index);
+    setCurrentNoteContent(activeImage.notes);
+
+    // 找到与当前索引对应的完整图片对象并设置为selectedImage
+    const currentPath = Object.entries(imageIndexMap).find(
+      ([, idx]) => idx === index
+    )?.[0];
+    if (currentPath) {
+      const currentImage = images.find((img) => img.path === currentPath);
+      if (currentImage) {
+        setSelectedImage(currentImage);
+      }
+    }
+  };
+
+  // 保存笔记
+  const handleSaveNote = (newNoteContent) => {
+    if (selectedImage) {
+      const updatedImage = { ...selectedImage, notes: newNoteContent };
+      handleMetadataUpdate(selectedImage.path, { notes: newNoteContent });
+      setSelectedImage(updatedImage);
+      setCurrentNoteContent(newNoteContent);
+    }
   };
 
   // 处理元数据更新
@@ -352,6 +384,19 @@ const ImageManager = ({
       <ContentContainer>
         <Title>图片管理器</Title>
         <ContentWrapper>
+          {/* 使用可拖动笔记窗口组件 */}
+          <DraggableNoteWindow
+            title="图片笔记"
+            content={currentNoteContent || "无笔记内容"}
+            visible={visible && noteWindowVisible}
+            onClose={() => setNoteWindowVisible(false)}
+            defaultPosition={{ x: 30, y: 128 }}
+            width={300}
+            maxHeight={300}
+            headerColor="#1890ff"
+            editable={true}
+            onSave={handleSaveNote}
+          />
           {showUploader ? (
             <UploadBox
               onClick={() => inputRef.current?.click()}
@@ -440,7 +485,7 @@ const ImageManager = ({
                     {monthImages.map((image, index) => (
                       <ImageCard
                         key={index}
-                        onClick={() => handleImageClick(monthKey, index)}
+                        onClick={() => handleImageClick(image)}
                         onContextMenu={(e) => handleContextMenu(e, image)}
                       >
                         <Popover
@@ -486,7 +531,10 @@ const ImageManager = ({
                               e.stopPropagation();
                               setEditingImage({
                                 ...image,
-                                dateCreated: image.dateCreated === "未知" ? new Date().toLocaleString() : image.dateCreated,
+                                dateCreated:
+                                  image.dateCreated === "未知"
+                                    ? new Date().toLocaleString()
+                                    : image.dateCreated,
                                 editMode: "properties",
                               });
                             }}
@@ -520,6 +568,7 @@ const ImageManager = ({
 
               <Viewer
                 visible={visible}
+                onChange={handleImageChange}
                 onClose={() => setVisible(false)}
                 images={viewerImages}
                 activeIndex={activeIndex}
