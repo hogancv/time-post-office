@@ -1,125 +1,23 @@
-import React, { useMemo, useState } from "react";
-import styled from "styled-components";
-import { Popover, message, Empty, Button } from "antd"; // 导入Button
+import React, { useMemo, useState, useRef } from "react";
+import { Popover, message, Empty, Button, Badge } from "antd";
 import {
   SortAscendingOutlined,
   SortDescendingOutlined,
-} from "@ant-design/icons"; // 导入排序图标
-import { Title } from "./ImageManager.styled";
+} from "@ant-design/icons";
 import Viewer from "react-viewer";
 import DraggableNoteWindow from "./DraggableNoteWindow";
-import Masonry from "react-masonry-css";
-
-const NotesContainer = styled.div`
-  flex: 1;
-  margin-left: 200px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const ContentWrapper = styled.div`
-  width: 100%;
-  max-width: 1400px;
-  background-color: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-`;
-
-// 自定义瀑布流样式
-const StyledMasonry = styled(Masonry)`
-  display: flex;
-  width: 100%;
-  margin-left: -24px; /* 抵消列间距 */
-
-  .masonry-column {
-    padding-left: 24px; /* 列间距 */
-    background-clip: padding-box;
-  }
-`;
-
-const ImageCard = styled.div`
-  position: relative;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  cursor: pointer;
-  transition: all 0.3s;
-  background-color: white;
-  margin-bottom: 24px; /* 卡片之间的垂直间距 */
-
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-  }
-
-  img {
-    width: 100%;
-    height: auto; /* 高度自适应，以适应瀑布流 */
-    object-fit: cover;
-  }
-`;
-
-const NoteContent = styled.div`
-  padding: 12px 16px;
-  background: #f8f9fa;
-  border-top: 1px solid #eee;
-  min-height: 60px;
-  max-height: 150px;
-  overflow: hidden;
-
-  p {
-    margin: 0;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    color: #333;
-    font-size: 14px;
-    line-height: 1.5;
-  }
-`;
-
-const StyledTitle = styled(Title)`
-  margin-bottom: 24px;
-  font-size: 24px;
-  color: #333;
-  position: relative;
-  padding-bottom: 10px;
-
-  &:after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 60px;
-    height: 3px;
-    background-color: #1890ff;
-  }
-`;
-
-const EmptyContainer = styled.div`
-  padding: 40px;
-  text-align: center;
-`;
-
-const DateLabel = styled.div`
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-`;
-
-const SortButtonContainer = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-`;
+import TimelineNav from "./TimelineSlider";
+import {
+  NotesContainer,
+  ContentWrapper,
+  StyledMasonry,
+  ImageCard,
+  NoteContent,
+  DateLabel,
+  EmptyContainer,
+  SortButtonContainer,
+  StyledTitle,
+} from "./NotesView.styled";
 
 const NotesView = ({ images, onMetadataUpdate }) => {
   const [visible, setVisible] = useState(false);
@@ -128,34 +26,151 @@ const NotesView = ({ images, onMetadataUpdate }) => {
   const [currentNoteContent, setCurrentNoteContent] = useState("");
   const [imagesData, setImagesData] = useState(images);
   const [sortDirection, setSortDirection] = useState("desc"); // 默认降序，新的在前
+  const [timeFilter, setTimeFilter] = useState(null);
+  const [activeTimeItems, setActiveTimeItems] = useState([]);
+  const masonryRef = useRef(null); // 添加对瀑布流容器的引用
 
   const toggleSortDirection = () => {
     setSortDirection(sortDirection === "desc" ? "asc" : "desc");
   };
 
   const imagesWithNotes = useMemo(() => {
-    const sortedImages = [...imagesData]
-      .filter((img) => img.notes && img.notes.trim().length > 0)
-      .sort((a, b) => {
-        // 先处理未知日期的情况
-        if (a.dateCreated === "未知" && b.dateCreated !== "未知") return 1;
-        if (a.dateCreated !== "未知" && b.dateCreated === "未知") return -1;
-        if (a.dateCreated === "未知" && b.dateCreated === "未知") return 0;
+    let filteredImages = [...imagesData].filter(
+      (img) => img.notes && img.notes.trim().length > 0
+    );
 
-        // 处理有日期的情况
-        const dateA = new Date(a.dateCreated);
-        const dateB = new Date(b.dateCreated);
+    // 应用时间筛选
+    if (timeFilter && timeFilter.start && timeFilter.end) {
+      filteredImages = filteredImages.filter((img) => {
+        if (!img.dateCreated || img.dateCreated === "未知") return false;
 
-        // 根据排序方向决定比较方式
-        if (sortDirection === "desc") {
-          return dateB - dateA; // 降序，新的在前
-        } else {
-          return dateA - dateB; // 升序，旧的在前
+        const imgDate = new Date(img.dateCreated);
+        return imgDate >= timeFilter.start && imgDate <= timeFilter.end;
+      });
+    }
+
+    return filteredImages.sort((a, b) => {
+      // 先处理未知日期的情况
+      if (a.dateCreated === "未知" && b.dateCreated !== "未知") return 1;
+      if (a.dateCreated !== "未知" && b.dateCreated === "未知") return -1;
+      if (a.dateCreated === "未知" && b.dateCreated === "未知") return 0;
+
+      // 处理有日期的情况
+      const dateA = new Date(a.dateCreated);
+      const dateB = new Date(b.dateCreated);
+
+      // 根据排序方向决定比较方式
+      if (sortDirection === "desc") {
+        return dateB - dateA; // 降序，新的在前
+      } else {
+        return dateA - dateB; // 升序，旧的在前
+      }
+    });
+  }, [imagesData, sortDirection, timeFilter]);
+
+  // 处理时间点选择，定位到对应的图片，但不筛选列表
+  const handleTimePointChange = (date, isUnknown) => {
+    // 清除之前的高亮状态和数据
+    setActiveTimeItems([]);
+
+    // 如果是重置（点击null），直接返回
+    if (!date && !isUnknown) {
+      return;
+    }
+
+    // 查找符合条件的图片
+    let targetImages = [];
+
+    if (isUnknown) {
+      // 查找未知日期的图片
+      targetImages = imagesWithNotes.filter(
+        (img) =>
+          !img.dateCreated ||
+          img.dateCreated === "未知" ||
+          isNaN(new Date(img.dateCreated).getTime())
+      );
+      console.log("未知日期图片数量:", targetImages.length);
+    } else if (date) {
+      // 查找指定年月的图片
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+
+      targetImages = imagesWithNotes.filter((img) => {
+        if (img.dateCreated && img.dateCreated !== "未知") {
+          try {
+            const imgDate = new Date(img.dateCreated);
+            if (!isNaN(imgDate.getTime())) {
+              return (
+                imgDate.getFullYear() === year &&
+                imgDate.getMonth() + 1 === month
+              );
+            }
+          } catch (e) {
+            return false;
+          }
+        }
+        return false;
+      });
+      console.log(`${year}年${month}月图片数量:`, targetImages.length);
+    }
+
+    // 如果找不到匹配的图片，提前返回
+    if (!targetImages || targetImages.length === 0) {
+      console.log("未找到匹配的图片");
+      return;
+    }
+
+    // 记录当前高亮的图片路径
+    const highlightPaths = targetImages.map((img) => img.path || img.url);
+    setActiveTimeItems(highlightPaths);
+    console.log("需要高亮的图片数量:", highlightPaths.length);
+
+    // 延迟执行DOM操作，确保React已经完成渲染
+    setTimeout(() => {
+      // 首先清除所有之前的高亮
+      const allCards = document.querySelectorAll(".masonry-grid .image-card");
+      allCards.forEach((card) => {
+        card.classList.remove("highlight-card");
+      });
+
+      // 然后对匹配的图片进行高亮处理
+      let firstCardToScroll = null;
+
+      highlightPaths.forEach((path) => {
+        const cardElement = document.querySelector(
+          `.image-card[data-path="${path}"]`
+        );
+        if (cardElement) {
+          cardElement.classList.add("highlight-card");
+
+          // 记录第一个找到的卡片，用于滚动
+          if (!firstCardToScroll) {
+            firstCardToScroll = cardElement;
+          }
         }
       });
 
-    return sortedImages;
-  }, [imagesData, sortDirection]);
+      // 滚动到第一个高亮的卡片
+      if (firstCardToScroll) {
+        firstCardToScroll.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 300); // 增加延迟确保DOM完全加载
+  };
+
+  // 重置高亮
+  const resetHighlights = () => {
+    // 清除高亮状态
+    setActiveTimeItems([]);
+
+    // 清除DOM中的高亮类
+    const highlightedCards = document.querySelectorAll(".highlight-card");
+    highlightedCards.forEach((el) => {
+      el.classList.remove("highlight-card");
+    });
+  };
 
   const handleMetadataUpdate = async (imagePath, updates) => {
     await onMetadataUpdate(imagePath, updates);
@@ -251,12 +266,20 @@ const NotesView = ({ images, onMetadataUpdate }) => {
               )
             }
             onClick={toggleSortDirection}
+            style={{ marginRight: 8 }}
           >
             {sortDirection === "desc" ? "时间降序" : "时间升序"}
           </Button>
+
+          {activeTimeItems.length > 0 && (
+            <Button onClick={resetHighlights}>
+              清除高亮 ({activeTimeItems.length})
+            </Button>
+          )}
         </SortButtonContainer>
 
         <StyledMasonry
+          ref={masonryRef}
           breakpointCols={breakpointColumns}
           className="masonry-grid"
           columnClassName="masonry-column"
@@ -265,12 +288,22 @@ const NotesView = ({ images, onMetadataUpdate }) => {
             <ImageCard
               key={image.path || index}
               onClick={() => onImageClick(index)}
+              className={
+                activeTimeItems.includes(image.path || image.url)
+                  ? "highlight-card image-card"
+                  : "image-card"
+              }
+              data-path={image.path || image.url}
+              data-index={index}
             >
               <img src={image.url} alt={image.name || "图片"} loading="lazy" />
-              {image.dateCreated && (
+              {image.dateCreated && image.dateCreated !== "未知" && (
                 <DateLabel>
                   {new Date(image.dateCreated).toLocaleDateString()}
                 </DateLabel>
+              )}
+              {(!image.dateCreated || image.dateCreated === "未知") && (
+                <DateLabel className="unknown-date">未知时间</DateLabel>
               )}
               <NoteContent>
                 <Popover
@@ -300,7 +333,7 @@ const NotesView = ({ images, onMetadataUpdate }) => {
         {imagesWithNotes.length === 0 && (
           <EmptyContainer>
             <Empty
-              description="暂无笔记"
+              description={timeFilter ? "该时间范围内无笔记" : "暂无笔记"}
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           </EmptyContainer>
@@ -337,6 +370,12 @@ const NotesView = ({ images, onMetadataUpdate }) => {
         headerColor="#1890ff"
         editable={true}
         onSave={handleSaveNote}
+      />
+
+      {/* 时间导航组件 - 现在使用文字列表形式 */}
+      <TimelineNav
+        images={imagesData}
+        onTimePointChange={handleTimePointChange}
       />
     </NotesContainer>
   );
