@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Popover } from 'antd';
 import { Title } from './ImageManager.styled';
 import Viewer from 'react-viewer';
+import DraggableNoteWindow from './DraggableNoteWindow';
 
 const NotesContainer = styled.div`
   flex: 1;
@@ -54,6 +55,8 @@ const NoteContent = styled.div`
 const NotesView = ({ images }) => {
   const [visible, setVisible] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [noteWindowVisible, setNoteWindowVisible] = useState(false);
+  const [currentNoteContent, setCurrentNoteContent] = useState('');
 
   const imagesWithNotes = useMemo(() => {
     return images.filter(img => img.notes && img.notes.trim().length > 0);
@@ -62,7 +65,34 @@ const NotesView = ({ images }) => {
   const onImageClick = (index) => {
     setCurrentIndex(index);
     setVisible(true);
+    
+    // 显示笔记窗口
+    if (imagesWithNotes[index]?.notes) {
+      setCurrentNoteContent(imagesWithNotes[index].notes);
+      setNoteWindowVisible(true);
+    }
   };
+
+  // 处理图片切换
+  const handleImageChange = (activeImage, index) => {
+    setCurrentIndex(index);
+    
+    // 更新笔记内容
+    if (imagesWithNotes[index]?.notes) {
+      setCurrentNoteContent(imagesWithNotes[index].notes);
+      setNoteWindowVisible(true);
+    } else {
+      setNoteWindowVisible(false);
+    }
+  };
+
+  // 准备图片数据
+  const viewerImages = useMemo(() => {
+    return imagesWithNotes.map(img => ({
+      src: img.url || '',
+      alt: img.name || '',
+    }));
+  }, [imagesWithNotes]);
 
   return (
     <NotesContainer>
@@ -71,10 +101,10 @@ const NotesView = ({ images }) => {
         <ImageGrid>
           {imagesWithNotes.map((image, index) => (
             <ImageCard 
-              key={image.path} 
+              key={image.path || index} 
               onClick={() => onImageClick(index)}
             >
-              <img src={image.url} alt={image.name} loading="lazy" />
+              <img src={image.url} alt={image.name || '图片'} loading="lazy" />
               <NoteContent>
                 <Popover
                   content={image.notes}
@@ -82,7 +112,7 @@ const NotesView = ({ images }) => {
                   trigger="hover"
                   placement="bottom"
                 >
-                  <p>{image.notes.length > 50 ? `${image.notes.slice(0, 50)}...` : image.notes}</p>
+                  <p>{image.notes?.length > 50 ? `${image.notes.slice(0, 50)}...` : image.notes}</p>
                 </Popover>
               </NoteContent>
             </ImageCard>
@@ -94,17 +124,38 @@ const NotesView = ({ images }) => {
           </div>
         )}
       </ContentWrapper>
-      <Viewer
-        visible={visible}
-        onClose={() => {
-          setVisible(false);
-        }}
-        images={imagesWithNotes.map(img => ({ src: img.url, alt: img.name }))}
-        activeIndex={currentIndex}
-        onMaskClick={() => setVisible(false)}
+      
+      {/* 图片查看器 */}
+      {imagesWithNotes.length > 0 && (
+        <Viewer
+          visible={visible}
+          onClose={() => {
+            setVisible(false);
+            setNoteWindowVisible(false);
+          }}
+          images={viewerImages}
+          activeIndex={currentIndex}
+          onChange={handleImageChange}
+          onMaskClick={() => setVisible(false)}
+          zoomable={true}
+          rotatable={true}
+          scalable={true}
+        />
+      )}
+      
+      {/* 使用可拖动笔记窗口组件 */}
+      <DraggableNoteWindow
+        title="图片笔记"
+        content={currentNoteContent || '无笔记内容'}
+        visible={visible && noteWindowVisible}
+        onClose={() => setNoteWindowVisible(false)}
+        defaultPosition={{ x: 30, y: 128 }}
+        width={300}
+        maxHeight={300}
+        headerColor="#1890ff"
       />
     </NotesContainer>
   );
 };
 
-export default NotesView; 
+export default NotesView;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Button } from './ImageManager.styled';
-import { DatePicker } from 'antd';
+import { DatePicker, message } from 'antd';
 import dayjs from 'dayjs';
 
 const DialogOverlay = styled.div`
@@ -91,6 +91,7 @@ const EditDialog = ({ image, onSave, onClose }) => {
       dateCreated: formData.dateCreated ? formData.dateCreated.format('YYYY/M/D HH:mm:ss') : '',
     };
     onSave(submittedData);
+    message.success('保存成功！');
   };
 
   return (
@@ -189,4 +190,4 @@ const EditDialog = ({ image, onSave, onClose }) => {
   );
 };
 
-export default EditDialog; 
+export default EditDialog;

@@ -572,8 +572,6 @@ const ImageManager = ({
                   }}
                 />
               )}
-
-              <NotesView images={images} />
             </>
           )}
 
