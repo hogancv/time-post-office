@@ -1,8 +1,7 @@
 import styled from "styled-components";
 
 export const Container = styled.div`
-  width: 100%;
-  padding: 20px;
+  width: calc(100vw - 200px);
 `;
 
 export const UploadArea = styled.div`
@@ -33,6 +32,8 @@ export const HelpText = styled.label`
 `;
 
 export const ImageGrid = styled.div`
+
+  width: 100%;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
@@ -192,12 +193,12 @@ export const Dialog = styled.div`
 export const MainContainer = styled.div`
   display: flex;
   min-height: 100vh;
+  width: calc(100vw - 200px);
 `;
 
 export const ContentContainer = styled.div`
   flex: 1;
   margin-left: 200px;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;

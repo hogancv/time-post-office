@@ -135,9 +135,16 @@ const ImagePropertiesDialog = ({
                 编辑
               </Button>
             )}
-            <Button type="text" size="small" style={{ color: 'white' }} onClick={onClose}>
-              ✕
-            </Button>
+            {onClose && (
+              <Button
+                type="text"
+                size="small"
+                style={{ color: 'white' }}
+                onClick={onClose}
+              >
+                ✕
+              </Button>
+            )}
           </div>
         </WindowHeader>
         <WindowContent maxHeight={maxHeight}>

@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import Masonry from "react-masonry-css";
-import { Title } from "./ImageManager.styled";
+import { Title } from "../ImageManager/ImageManager.styled";
 
 export const NotesContainer = styled.div`
   flex: 1;

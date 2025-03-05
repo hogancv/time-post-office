@@ -5,9 +5,9 @@ import {
   SortDescendingOutlined,
 } from "@ant-design/icons";
 import Viewer from "react-viewer";
-import DraggableNoteWindow from "./DraggableNoteWindow";
-import TimelineNav from "./TimelineSlider";
-import ImagePropertiesDialog from "./ImagePropertiesDialog";
+import DraggableNoteWindow from "../DraggableNoteWindow";
+import TimelineNav from "../TimelineSlider";
+import ImagePropertiesDialog from "../DraggablePropertiesWindow";
 import {
   NotesContainer,
   ContentWrapper,
@@ -23,12 +23,12 @@ import {
 const NotesView = ({ images, onMetadataUpdate }) => {
   const [visible, setVisible] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [noteWindowVisible, setNoteWindowVisible] = useState(false);
   const [currentNoteContent, setCurrentNoteContent] = useState("");
   const [imagesData, setImagesData] = useState(images);
   const [sortDirection, setSortDirection] = useState("asc");
   const [activeTimeItems, setActiveTimeItems] = useState([]);
   const masonryRef = useRef(null); // 添加对瀑布流容器的引用
+  const [noteWindowVisible, setNoteWindowVisible] = useState(false);
   const [imagePropertiesVisible, setImagePropertiesVisible] = useState(false);
   const [currentImageProperties, setCurrentImageProperties] = useState({});
 
@@ -172,46 +172,30 @@ const NotesView = ({ images, onMetadataUpdate }) => {
   const onImageClick = (index) => {
     setCurrentIndex(index);
     setVisible(true);
-    
+
     // 确保获取到有效的图片属性
     const selectedImage = imagesWithNotes[index];
     if (selectedImage) {
-        setCurrentImageProperties(selectedImage);
-        setImagePropertiesVisible(true);
-    }
-
-    // 显示笔记窗口
-    if (selectedImage?.notes) {
-        setCurrentNoteContent(selectedImage.notes);
-        setNoteWindowVisible(true);
+      setCurrentImageProperties(selectedImage);
+      setImagePropertiesVisible(true);
+      setNoteWindowVisible(true);
     }
   };
 
   // 处理图片切换
   const handleImageChange = (activeImage, index) => {
     setCurrentIndex(index);
-    
     // 更新当前图片属性
     const selectedImage = imagesWithNotes[index];
-    if (selectedImage) {
-        setCurrentImageProperties(selectedImage);
-        setImagePropertiesVisible(true); // 显示图片属性窗口
-    }
-
-    // 更新笔记内容
-    if (selectedImage?.notes) {
-        setCurrentNoteContent(selectedImage.notes);
-        setNoteWindowVisible(true);
-    } else {
-        setNoteWindowVisible(false);
-    }
+    setCurrentImageProperties(selectedImage);
+    setCurrentNoteContent(selectedImage.notes);
   };
 
   // 在关闭图片查看器时，隐藏图片属性窗口
   const handleViewerClose = () => {
     setVisible(false);
-    setNoteWindowVisible(false);
     setImagePropertiesVisible(false); // 关闭图片查看器时隐藏属性窗口
+    setNoteWindowVisible(false);
   };
 
   // 保存笔记内容
@@ -393,7 +377,7 @@ const NotesView = ({ images, onMetadataUpdate }) => {
         title="图片属性"
         defaultPosition={{ x: 30, y: 520 }}
         image={currentImageProperties}
-        visible={imagePropertiesVisible}
+        visible={visible && imagePropertiesVisible}
         onClose={() => setImagePropertiesVisible(false)}
         onSave={handleImagePropertiesSave}
       />

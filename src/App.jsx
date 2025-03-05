@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import ImageManager from "./components/ImageManager";
-import NotesView from "./components/NotesView";
+import ImageManager from "./components/ImageManager/ImageManager";
+import NotesView from "./components/NotesView/NotesView";
 import Sidebar from "./components/Sidebar";
 import { imageDB } from "./utils/imageDB";
 import "./App.css";

@@ -27,12 +27,12 @@ import {
   DateLabel,
 } from "./ImageManager.styled";
 
-import { imageDB } from "../utils/imageDB";
-import EditDialog from "./EditDialog";
-import ContextMenu from "./ContextMenu";
+import { imageDB } from "../../utils/imageDB";
+import EditDialog from "../EditDialog";
+import ContextMenu from "../ContextMenu";
 import { Popover } from "antd";
-import DraggableNoteWindow from "./DraggableNoteWindow";
-import TimelineNav from "./TimelineSlider";
+import DraggableNoteWindow from "../DraggableNoteWindow";
+import TimelineNav from "../TimelineSlider";
 
 const ImageManager = ({
   images,
@@ -294,7 +294,7 @@ const ImageManager = ({
       // 滚动到该月份
       monthRefs.current[targetMonth].scrollIntoView({
         behavior: "smooth",
-        block: "start"
+        block: "start",
       });
     }
   };
@@ -568,30 +568,43 @@ const ImageManager = ({
               {Object.entries(groupedImages).map(([monthKey, monthImages]) => (
                 <MonthGroup
                   key={monthKey}
-                  ref={el => monthRefs.current[monthKey] = el}
+                  ref={(el) => (monthRefs.current[monthKey] = el)}
                   style={{
-                    backgroundColor: monthKey === highlightedMonth ? 'rgba(24, 144, 255, 0.05)' : 'transparent',
-                    borderLeft: monthKey === highlightedMonth ? '4px solid #1890ff' : 'none',
-                    transition: 'background-color 0.5s ease, border-left 0.5s ease',
-                    paddingLeft: monthKey === highlightedMonth ? '12px' : '16px',
-                    scrollMarginTop: '90px' // 滚动时留出顶部空间
+                    backgroundColor:
+                      monthKey === highlightedMonth
+                        ? "rgba(24, 144, 255, 0.05)"
+                        : "transparent",
+                    borderLeft:
+                      monthKey === highlightedMonth
+                        ? "4px solid #1890ff"
+                        : "none",
+                    transition:
+                      "background-color 0.5s ease, border-left 0.5s ease",
+                    paddingLeft:
+                      monthKey === highlightedMonth ? "12px" : "16px",
+                    scrollMarginTop: "90px", // 滚动时留出顶部空间
                   }}
                 >
-                  <h2 style={{
-                    color: monthKey === highlightedMonth ? '#1890ff' : 'inherit',
-                    transition: 'color 0.5s ease'
-                  }}>
+                  <h2
+                    style={{
+                      color:
+                        monthKey === highlightedMonth ? "#1890ff" : "inherit",
+                      transition: "color 0.5s ease",
+                    }}
+                  >
                     {monthKey}
-                    {monthKey === highlightedMonth &&
-                      <span style={{
-                        marginLeft: '10px',
-                        fontSize: '0.8em',
-                        color: '#1890ff',
-                        animation: 'pulse 2s infinite'
-                      }}>
+                    {monthKey === highlightedMonth && (
+                      <span
+                        style={{
+                          marginLeft: "10px",
+                          fontSize: "0.8em",
+                          color: "#1890ff",
+                          animation: "pulse 2s infinite",
+                        }}
+                      >
                         ◀ 当前选择
                       </span>
-                    }
+                    )}
                   </h2>
 
                   <ImageGrid>
@@ -617,18 +630,20 @@ const ImageManager = ({
                           placement="right"
                           open={image.notes ? undefined : false}
                         >
-                          <div style={{ height: '200px', overflow: 'hidden' }}>
+                          <div style={{ height: "200px", overflow: "hidden" }}>
                             {image.dateCreated && (
                               <DateLabel>
-                                {new Date(image.dateCreated).toLocaleDateString()}
+                                {new Date(
+                                  image.dateCreated
+                                ).toLocaleDateString()}
                               </DateLabel>
                             )}
-                              <img
-                                src={image.url}
-                                alt={image.name}
-                                loading="lazy"
-                                style={{ height: '100%', width: '100%' }}
-                              />
+                            <img
+                              src={image.url}
+                              alt={image.name}
+                              loading="lazy"
+                              style={{ height: "100%", width: "100%" }}
+                            />
                           </div>
                         </Popover>
                         <Popover
