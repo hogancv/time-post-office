@@ -20,6 +20,7 @@ const TimelineContainer = styled.div`
   align-items: center;
   z-index: 100;
   overflow: hidden;
+  cursor: move;
 `;
 
 const TimelineHeader = styled.div`
@@ -57,6 +58,7 @@ const TimeItem = styled.div`
     props.active ? "rgba(24, 144, 255, 0.1)" : "transparent"};
   color: ${(props) => (props.active ? "#1890ff" : "inherit")};
   font-weight: ${(props) => (props.active ? "600" : "normal")};
+  pointer-events: auto;
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.03);
@@ -203,7 +205,7 @@ const TimelineNav = ({ images, onTimePointChange, sortDirection }) => {
   };
 
   return (
-    <Draggable handle=".timeline-handle" bounds="parent">
+    <Draggable handle=".timeline-handle" bounds={false}>
       <TimelineContainer>
         <TimelineHeader className="timeline-handle">
           <Text strong>时间导航</Text>
