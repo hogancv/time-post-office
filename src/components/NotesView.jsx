@@ -7,6 +7,7 @@ import {
 import Viewer from "react-viewer";
 import DraggableNoteWindow from "./DraggableNoteWindow";
 import TimelineNav from "./TimelineSlider";
+import ImagePropertiesDialog from "./ImagePropertiesDialog";
 import {
   NotesContainer,
   ContentWrapper,
@@ -26,9 +27,10 @@ const NotesView = ({ images, onMetadataUpdate }) => {
   const [currentNoteContent, setCurrentNoteContent] = useState("");
   const [imagesData, setImagesData] = useState(images);
   const [sortDirection, setSortDirection] = useState("asc");
-  const [timeFilter, setTimeFilter] = useState(null);
   const [activeTimeItems, setActiveTimeItems] = useState([]);
   const masonryRef = useRef(null); // 添加对瀑布流容器的引用
+  const [imagePropertiesVisible, setImagePropertiesVisible] = useState(false);
+  const [currentImageProperties, setCurrentImageProperties] = useState({});
 
   const toggleSortDirection = () => {
     setSortDirection(sortDirection === "desc" ? "asc" : "desc");
@@ -38,16 +40,6 @@ const NotesView = ({ images, onMetadataUpdate }) => {
     let filteredImages = [...imagesData].filter(
       (img) => img.notes && img.notes.trim().length > 0
     );
-
-    // 应用时间筛选
-    if (timeFilter && timeFilter.start && timeFilter.end) {
-      filteredImages = filteredImages.filter((img) => {
-        if (!img.dateCreated || img.dateCreated === "未知") return false;
-
-        const imgDate = new Date(img.dateCreated);
-        return imgDate >= timeFilter.start && imgDate <= timeFilter.end;
-      });
-    }
 
     return filteredImages.sort((a, b) => {
       // 先处理未知日期的情况
@@ -66,7 +58,7 @@ const NotesView = ({ images, onMetadataUpdate }) => {
         return dateA - dateB; // 升序，旧的在前
       }
     });
-  }, [imagesData, sortDirection, timeFilter]);
+  }, [imagesData, sortDirection]);
 
   // 处理时间点选择，定位到对应的图片，但不筛选列表
   const handleTimePointChange = (date, isUnknown) => {
@@ -180,25 +172,46 @@ const NotesView = ({ images, onMetadataUpdate }) => {
   const onImageClick = (index) => {
     setCurrentIndex(index);
     setVisible(true);
+    
+    // 确保获取到有效的图片属性
+    const selectedImage = imagesWithNotes[index];
+    if (selectedImage) {
+        setCurrentImageProperties(selectedImage);
+        setImagePropertiesVisible(true);
+    }
 
     // 显示笔记窗口
-    if (imagesWithNotes[index]?.notes) {
-      setCurrentNoteContent(imagesWithNotes[index].notes);
-      setNoteWindowVisible(true);
+    if (selectedImage?.notes) {
+        setCurrentNoteContent(selectedImage.notes);
+        setNoteWindowVisible(true);
     }
   };
 
   // 处理图片切换
   const handleImageChange = (activeImage, index) => {
     setCurrentIndex(index);
+    
+    // 更新当前图片属性
+    const selectedImage = imagesWithNotes[index];
+    if (selectedImage) {
+        setCurrentImageProperties(selectedImage);
+        setImagePropertiesVisible(true); // 显示图片属性窗口
+    }
 
     // 更新笔记内容
-    if (imagesWithNotes[index]?.notes) {
-      setCurrentNoteContent(imagesWithNotes[index].notes);
-      setNoteWindowVisible(true);
+    if (selectedImage?.notes) {
+        setCurrentNoteContent(selectedImage.notes);
+        setNoteWindowVisible(true);
     } else {
-      setNoteWindowVisible(false);
+        setNoteWindowVisible(false);
     }
+  };
+
+  // 在关闭图片查看器时，隐藏图片属性窗口
+  const handleViewerClose = () => {
+    setVisible(false);
+    setNoteWindowVisible(false);
+    setImagePropertiesVisible(false); // 关闭图片查看器时隐藏属性窗口
   };
 
   // 保存笔记内容
@@ -244,6 +257,18 @@ const NotesView = ({ images, onMetadataUpdate }) => {
     1400: 3, // 宽度 <= 1400px 时是3列
     1100: 2, // 宽度 <= 1100px 时是2列
     700: 1, // 宽度 <= 700px 时是1列
+  };
+
+  const handleImagePropertiesSave = async (updatedProperties) => {
+    // 处理保存逻辑
+    const updatedImages = [...imagesData];
+    const originalIndex = updatedImages.findIndex(img => img.path === currentImageProperties.path);
+    if (originalIndex !== -1) {
+      updatedImages[originalIndex] = { ...updatedImages[originalIndex], ...updatedProperties };
+      setImagesData(updatedImages);
+      // 这里可以调用 onMetadataUpdate 进行持久化
+      await handleMetadataUpdate(currentImageProperties.path, updatedProperties);
+    }
   };
 
   return (
@@ -326,24 +351,13 @@ const NotesView = ({ images, onMetadataUpdate }) => {
             </ImageCard>
           ))}
         </StyledMasonry>
-        {imagesWithNotes.length === 0 && (
-          <EmptyContainer>
-            <Empty
-              description={timeFilter ? "该时间范围内无笔记" : "暂无笔记"}
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-            />
-          </EmptyContainer>
-        )}
       </ContentWrapper>
 
       {/* 图片查看器 */}
       {imagesWithNotes.length > 0 && (
         <Viewer
           visible={visible}
-          onClose={() => {
-            setVisible(false);
-            setNoteWindowVisible(false);
-          }}
+          onClose={handleViewerClose}
           images={viewerImages}
           activeIndex={currentIndex}
           onChange={handleImageChange}
@@ -373,6 +387,15 @@ const NotesView = ({ images, onMetadataUpdate }) => {
         images={imagesData}
         onTimePointChange={handleTimePointChange}
         sortDirection={sortDirection}
+      />
+
+      <ImagePropertiesDialog
+        title="图片属性"
+        defaultPosition={{ x: 30, y: 520 }}
+        image={currentImageProperties}
+        visible={imagePropertiesVisible}
+        onClose={() => setImagePropertiesVisible(false)}
+        onSave={handleImagePropertiesSave}
       />
     </NotesContainer>
   );
