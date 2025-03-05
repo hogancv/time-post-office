@@ -4,12 +4,7 @@ import exifr from "exifr";
 import {
   ImageGrid,
   ImageCard,
-  Stats,
-  Loading,
-  ErrorMessage,
   FilterBar,
-  Select,
-  Button,
   MonthGroup,
   MainContainer,
   ContentContainer,
@@ -23,14 +18,16 @@ import {
   InfoIndicator,
   DateLabel,
 } from "./ImageManager.styled";
-
+import {
+  SortAscendingOutlined,
+  SortDescendingOutlined,
+} from "@ant-design/icons";
 import { imageDB } from "../../utils/imageDB";
-import EditDialog from "../EditDialog";
-import { Popover } from "antd";
 import DraggableNoteWindow from "../DraggableNoteWindow";
 import TimelineNav from "../TimelineSlider";
 import DraggablePropertiesWindow from "../DraggablePropertiesWindow";
 import useImageViewer from "../../hooks/useImageViewer";
+import { Spin, Alert, Popover, Select, Button } from "antd";
 
 const ImageManager = ({
   images,
@@ -404,29 +401,50 @@ const ImageManager = ({
               <FilterBar>
                 <Select
                   value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value)}
+                  onChange={(value) => setSelectedModel(value)}
+                  style={{ width: 200, marginRight: 10 }}
                 >
-                  <option value="all">所有相机型号</option>
-
+                  <Select.Option value="all">所有相机型号</Select.Option>
                   {uniqueModels.map((model) => (
-                    <option key={model} value={model}>
+                    <Select.Option key={model} value={model}>
                       {model}
-                    </option>
+                    </Select.Option>
                   ))}
                 </Select>
 
-                <Select
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value)}
+                <Button
+                  type="primary"
+                  icon={
+                    sortOrder === "desc" ? (
+                      <SortDescendingOutlined />
+                    ) : (
+                      <SortAscendingOutlined />
+                    )
+                  }
+                  onClick={() =>
+                    setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+                  }
+                  style={{ marginRight: 8 }}
                 >
-                  <option value="desc">时间降序</option>
+                  {sortOrder === "desc" ? "时间降序" : "时间升序"}
+                </Button>
 
-                  <option value="asc">时间升序</option>
-                </Select>
+                <Button
+                  type="primary"
+                  danger
+                  onClick={handleReset}
+                  style={{ marginRight: 10 }}
+                >
+                  重新选择文件夹
+                </Button>
 
-                <Button onClick={handleReset}>重新选择文件夹</Button>
-
-                <Button onClick={handleExportConfig}>导出配置</Button>
+                <Button
+                  type="default"
+                  onClick={handleExportConfig}
+                  style={{ marginRight: 10 }}
+                >
+                  导出配置
+                </Button>
                 <input
                   type="file"
                   accept=".json"
@@ -435,6 +453,7 @@ const ImageManager = ({
                   id="config-import"
                 />
                 <Button
+                  type="default"
                   onClick={() =>
                     document.getElementById("config-import").click()
                   }
@@ -442,10 +461,6 @@ const ImageManager = ({
                   导入配置
                 </Button>
               </FilterBar>
-
-              <Stats>
-                <p>共找到 {images.length} 张图片</p>
-              </Stats>
 
               {Object.entries(groupedImages).map(([monthKey, monthImages]) => (
                 <MonthGroup
@@ -629,14 +644,9 @@ const ImageManager = ({
             </>
           )}
 
-          {isLoading && (
-            <Loading>
-              <div className="loading-spinner"></div>
-              <p>正在加载图片信息...</p>
-            </Loading>
-          )}
+          {isLoading && <Spin tip="正在加载图片信息..." />}
 
-          {error && <ErrorMessage>{error}</ErrorMessage>}
+          {error && <Alert message={error} type="error" />}
         </ContentWrapper>
       </ContentContainer>
     </MainContainer>

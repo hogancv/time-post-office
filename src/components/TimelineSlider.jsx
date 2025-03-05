@@ -104,37 +104,35 @@ const TimelineNav = ({ images, onTimePointChange, sortDirection }) => {
 
     // 过滤有笔记的图片并按年月分组
     images.forEach((img) => {
-      if (img.notes && img.notes.trim().length > 0) {
-        if (img.dateCreated && img.dateCreated !== "未知") {
-          try {
-            const date = new Date(img.dateCreated);
+      if (img.dateCreated && img.dateCreated !== "未知") {
+        try {
+          const date = new Date(img.dateCreated);
 
-            // 确保日期有效
-            if (!isNaN(date.getTime())) {
-              const year = date.getFullYear();
-              const month = date.getMonth() + 1;
-              const key = `${year}-${month}`;
+          // 确保日期有效
+          if (!isNaN(date.getTime())) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const key = `${year}-${month}`;
 
-              if (!yearMonthMap[key]) {
-                yearMonthMap[key] = {
-                  year,
-                  month,
-                  date: new Date(date),
-                  count: 1,
-                  label: `${year}年${month}月`,
-                };
-              } else {
-                yearMonthMap[key].count++;
-              }
+            if (!yearMonthMap[key]) {
+              yearMonthMap[key] = {
+                year,
+                month,
+                date: new Date(date),
+                count: 1,
+                label: `${year}年${month}月`,
+              };
             } else {
-              hasUnknown = true;
+              yearMonthMap[key].count++;
             }
-          } catch (e) {
+          } else {
             hasUnknown = true;
           }
-        } else {
+        } catch (e) {
           hasUnknown = true;
         }
+      } else {
+        hasUnknown = true;
       }
     });
 
@@ -147,11 +145,9 @@ const TimelineNav = ({ images, onTimePointChange, sortDirection }) => {
     if (hasUnknown) {
       const unknownCount = images.filter(
         (img) =>
-          img.notes &&
-          img.notes.trim().length > 0 &&
-          (!img.dateCreated ||
-            img.dateCreated === "未知" ||
-            isNaN(new Date(img.dateCreated).getTime()))
+          !img.dateCreated ||
+          img.dateCreated === "未知" ||
+          isNaN(new Date(img.dateCreated).getTime())
       ).length;
 
       points.push({
@@ -163,7 +159,7 @@ const TimelineNav = ({ images, onTimePointChange, sortDirection }) => {
         count: unknownCount,
       });
     }
-
+    console.log(points);
     return points;
   }, [images, sortDirection]);
 
@@ -177,7 +173,6 @@ const TimelineNav = ({ images, onTimePointChange, sortDirection }) => {
       setSelectedIndex(-1);
     }
   }, [timePoints]);
-
 
   // 处理时间点点击
   const handleTimeClick = (index) => {

@@ -91,19 +91,6 @@ export const ImageInfo = styled.div`
   }
 `;
 
-export const Stats = styled.div`
-  background: #fff;
-  padding: 15px 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin: 20px 0;
-
-  p {
-    margin: 0;
-    font-size: 16px;
-    color: #333;
-  }
-`;
 
 export const Loading = styled.div`
   text-align: center;
@@ -127,27 +114,6 @@ export const FilterBar = styled.div`
   align-items: center;
 `;
 
-export const Select = styled.select`
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  min-width: 200px;
-`;
-
-export const Button = styled.button`
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  background: #3498db;
-  color: white;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #2980b9;
-  }
-`;
 
 export const MonthGroup = styled.div`
   margin: 30px 0 15px;

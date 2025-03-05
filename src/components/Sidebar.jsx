@@ -44,6 +44,7 @@ const Sidebar = ({
   activeFilter,
   onFilterChange,
   onPageChange,
+  imgCount,
   noteCount,
 }) => {
   return (
@@ -57,6 +58,11 @@ const Sidebar = ({
       >
         <HomeOutlined />
         <span>首页</span>
+        <span
+          style={{ marginLeft: "auto", color: "rgba(255, 255, 255, 0.65)" }}
+        >
+          {imgCount}
+        </span>
       </MenuItem>
       <MenuItem
         $active={activeFilter === "hasNotes"}

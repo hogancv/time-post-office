@@ -11,8 +11,10 @@ function App() {
   const [images, setImages] = useState([]);
   const [showUploader, setShowUploader] = useState(true);
   const [noteCount, setNoteCount] = useState(0);
+  const [imgCount, setImgCount] = useState(0);
 
   const fetchNoteCount = useCallback(() => {
+    setImgCount(images.length);
     const count = images.filter(
       (img) => img.notes && img.notes.trim().length > 0
     ).length;
@@ -89,6 +91,7 @@ function App() {
         activeFilter={activeFilter}
         onFilterChange={handleFilterChange}
         onPageChange={handlePageChange}
+        imgCount={imgCount}
         noteCount={noteCount}
       />
       {renderContent()}

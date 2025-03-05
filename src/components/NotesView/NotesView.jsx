@@ -259,7 +259,7 @@ const NotesView = ({ images, onMetadataUpdate }) => {
 
       {/* 时间导航组件 */}
       <TimelineNav
-        images={imagesData}
+        images={imagesWithNotes}
         onTimePointChange={handleTimePointSelect}
         sortDirection={sortDirection}
       />
