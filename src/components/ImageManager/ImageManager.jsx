@@ -29,7 +29,6 @@ import {
 
 import { imageDB } from "../../utils/imageDB";
 import EditDialog from "../EditDialog";
-import ContextMenu from "../ContextMenu";
 import { Popover } from "antd";
 import DraggableNoteWindow from "../DraggableNoteWindow";
 import TimelineNav from "../TimelineSlider";
@@ -56,7 +55,6 @@ const ImageManager = ({
 
   const [editingImage, setEditingImage] = useState(null);
 
-  const [contextMenu, setContextMenu] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
 
   const [noteWindowVisible, setNoteWindowVisible] = useState(false);
@@ -436,23 +434,7 @@ const ImageManager = ({
     }
   };
 
-  // 处理右键点击
-  const handleContextMenu = (e, image) => {
-    e.preventDefault();
-    setContextMenu({
-      x: e.clientX,
-      y: e.clientY,
-    });
-    const imageWithDefaultDate = {
-      ...image,
-      dateCreated:
-        image.dateCreated === "未知"
-          ? new Date().toLocaleString()
-          : image.dateCreated,
-    };
-    setSelectedImage(imageWithDefaultDate);
-    setCurrentNoteContent(imageWithDefaultDate.notes || ""); // 直接设置当前笔记内容
-  };
+
 
   // 监控 selectedImage 的变化，自动更新 currentNoteContent
   useEffect(() => {
@@ -644,7 +626,6 @@ const ImageManager = ({
                       <ImageCard
                         key={index}
                         onClick={() => handleImageClick(image)}
-                        onContextMenu={(e) => handleContextMenu(e, image)}
                       >
                         <Popover
                           content={
@@ -774,30 +755,6 @@ const ImageManager = ({
                 />
               )}
 
-              {contextMenu && (
-                <ContextMenu
-                  x={contextMenu.x}
-                  y={contextMenu.y}
-                  onClose={() => {
-                    setContextMenu(null);
-                    setSelectedImage(null);
-                  }}
-                  onNoteClick={() => {
-                    setContextMenu(null);
-                    setEditingImage({
-                      ...selectedImage,
-                      editMode: "note",
-                    });
-                  }}
-                  onPropertiesClick={() => {
-                    setContextMenu(null);
-                    setEditingImage({
-                      ...selectedImage,
-                      editMode: "properties",
-                    });
-                  }}
-                />
-              )}
 
 
             </>
