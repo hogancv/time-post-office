@@ -60,10 +60,10 @@ const ImageManager = ({
 
   const [noteWindowVisible, setNoteWindowVisible] = useState(false);
   const [currentNoteContent, setCurrentNoteContent] = useState("");
-  
+
   // 为月份组创建引用
   const monthRefs = useRef({});
-  
+
   // 突出显示当前选择的月份
   const [highlightedMonth, setHighlightedMonth] = useState(null);
 
@@ -274,7 +274,7 @@ const ImageManager = ({
   // 处理时间点变化 - 滚动到对应月份
   const handleTimePointChange = (date, isUnknown) => {
     let targetMonth;
-    
+
     if (isUnknown) {
       targetMonth = "未知时间";
     } else if (date) {
@@ -285,10 +285,10 @@ const ImageManager = ({
       setHighlightedMonth(null);
       return;
     }
-    
+
     // 设置高亮月份
     setHighlightedMonth(targetMonth);
-    
+
     // 检查该月份的引用是否存在
     if (monthRefs.current[targetMonth]) {
       // 滚动到该月份
@@ -475,16 +475,16 @@ const ImageManager = ({
             editable={true}
             onSave={handleSaveNote}
           />
-          
+
           {/* 添加时间轴导航组件 */}
           {!showUploader && images.length > 0 && (
-            <TimelineNav 
-              images={images} 
+            <TimelineNav
+              images={images}
               onTimePointChange={handleTimePointChange}
               sortDirection={sortOrder}
             />
           )}
-          
+
           {showUploader ? (
             <UploadBox
               onClick={() => inputRef.current?.click()}
@@ -566,7 +566,7 @@ const ImageManager = ({
               </Stats>
 
               {Object.entries(groupedImages).map(([monthKey, monthImages]) => (
-                <MonthGroup 
+                <MonthGroup
                   key={monthKey}
                   ref={el => monthRefs.current[monthKey] = el}
                   style={{
@@ -577,14 +577,14 @@ const ImageManager = ({
                     scrollMarginTop: '90px' // 滚动时留出顶部空间
                   }}
                 >
-                  <h2 style={{ 
+                  <h2 style={{
                     color: monthKey === highlightedMonth ? '#1890ff' : 'inherit',
                     transition: 'color 0.5s ease'
                   }}>
                     {monthKey}
-                    {monthKey === highlightedMonth && 
-                      <span style={{ 
-                        marginLeft: '10px', 
+                    {monthKey === highlightedMonth &&
+                      <span style={{
+                        marginLeft: '10px',
                         fontSize: '0.8em',
                         color: '#1890ff',
                         animation: 'pulse 2s infinite'
@@ -617,16 +617,19 @@ const ImageManager = ({
                           placement="right"
                           open={image.notes ? undefined : false}
                         >
-                          {image.dateCreated && (
-                            <DateLabel>
-                              {new Date(image.dateCreated).toLocaleDateString()}
-                            </DateLabel>
-                          )}
-                          <img
-                            src={image.url}
-                            alt={image.name}
-                            loading="lazy"
-                          />
+                          <div style={{ height: '200px', overflow: 'hidden' }}>
+                            {image.dateCreated && (
+                              <DateLabel>
+                                {new Date(image.dateCreated).toLocaleDateString()}
+                              </DateLabel>
+                            )}
+                              <img
+                                src={image.url}
+                                alt={image.name}
+                                loading="lazy"
+                                style={{ height: '100%', width: '100%' }}
+                              />
+                          </div>
                         </Popover>
                         <Popover
                           content={
