@@ -1,13 +1,13 @@
-import React, { useRef, useState } from 'react';
-import styled from 'styled-components';
-import { Button, message } from 'antd';
-import Draggable from 'react-draggable';
+import { useRef, useState, useEffect } from "react";
+import styled from "styled-components";
+import { Button, message } from "antd";
+import Draggable from "react-draggable";
 
 const WindowContainer = styled.div`
   position: fixed;
-  top: ${props => props.defaultPosition?.y || 100}px;
-  right: ${props => props.defaultPosition?.x || 100}px;
-  width: ${props => props.width || 300}px;
+  top: ${(props) => props.defaultPosition?.y || 100}px;
+  right: ${(props) => props.defaultPosition?.x || 100}px;
+  width: ${(props) => props.width || 300}px;
   background: white;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
@@ -17,7 +17,7 @@ const WindowContainer = styled.div`
 
 const WindowHeader = styled.div`
   padding: 10px 15px;
-  background: ${props => props.headerColor || '#1890ff'};
+  background: ${(props) => props.headerColor || "#1890ff"};
   color: white;
   font-weight: bold;
   cursor: move;
@@ -28,7 +28,7 @@ const WindowHeader = styled.div`
 
 const WindowContent = styled.div`
   padding: 15px;
-  max-height: ${props => props.maxHeight || 300}px;
+  max-height: ${(props) => props.maxHeight || 300}px;
   overflow-y: auto;
   line-height: 1.6;
 `;
@@ -43,7 +43,7 @@ const NoteTextArea = styled.textarea`
   line-height: 1.6;
   resize: vertical;
   box-sizing: border-box;
-  
+
   &:focus {
     outline: none;
     border-color: #40a9ff;
@@ -71,6 +71,7 @@ const ButtonGroup = styled.div`
  * @param {number} props.maxHeight - 内容区最大高度
  * @param {function} props.onSave - 保存笔记回调
  * @param {boolean} props.editable - 是否可编辑
+ * @param {boolean} props.resetEditing - 是否重置编辑状态
  */
 const DraggableNoteWindow = ({
   title = "笔记",
@@ -82,16 +83,23 @@ const DraggableNoteWindow = ({
   width = 300,
   maxHeight = 300,
   onSave,
-  editable = false
+  editable = false,
+  resetEditing = false,
 }) => {
   const nodeRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
 
   // 当content变化时，更新editedContent
-  React.useEffect(() => {
+  useEffect(() => {
     setEditedContent(content);
   }, [content]);
+
+  useEffect(() => {
+    if (resetEditing && isEditing) {
+      setIsEditing(false);
+    }
+  }, [resetEditing, isEditing]);
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -105,7 +113,7 @@ const DraggableNoteWindow = ({
   const handleSave = () => {
     if (onSave) {
       onSave(editedContent);
-      message.success('笔记已保存！');
+      message.success("笔记已保存！");
     }
     setIsEditing(false);
   };
@@ -114,25 +122,29 @@ const DraggableNoteWindow = ({
 
   return (
     <Draggable nodeRef={nodeRef} handle=".window-handle" bounds="body">
-      <WindowContainer ref={nodeRef} defaultPosition={defaultPosition} width={width}>
+      <WindowContainer
+        ref={nodeRef}
+        defaultPosition={defaultPosition}
+        width={width}
+      >
         <WindowHeader className="window-handle" headerColor={headerColor}>
           <span>{title}</span>
           <div>
             {!isEditing && editable && (
-              <Button 
-                type="text" 
-                size="small" 
-                style={{ color: 'white', marginRight: 8 }} 
+              <Button
+                type="text"
+                size="small"
+                style={{ color: "white", marginRight: 8 }}
                 onClick={handleEditClick}
               >
                 编辑
               </Button>
             )}
             {onClose && (
-              <Button 
-                type="text" 
-                size="small" 
-                style={{ color: 'white' }} 
+              <Button
+                type="text"
+                size="small"
+                style={{ color: "white" }}
                 onClick={onClose}
               >
                 ✕
@@ -143,14 +155,16 @@ const DraggableNoteWindow = ({
         <WindowContent maxHeight={maxHeight}>
           {isEditing ? (
             <>
-              <NoteTextArea 
+              <NoteTextArea
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}
                 placeholder="编辑笔记内容..."
               />
               <ButtonGroup>
                 <Button onClick={handleCancelEdit}>取消</Button>
-                <Button type="primary" onClick={handleSave}>保存</Button>
+                <Button type="primary" onClick={handleSave}>
+                  保存
+                </Button>
               </ButtonGroup>
             </>
           ) : (

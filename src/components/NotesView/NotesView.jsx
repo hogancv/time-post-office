@@ -266,7 +266,7 @@ const NotesView = ({ images, onMetadataUpdate }) => {
       {/* 可拖动笔记窗口组件 */}
       <DraggableNoteWindow
         title="图片笔记"
-        content={currentNoteContent}
+        content={visible && currentNoteContent}
         visible={visible && noteWindowVisible}
         onClose={() => setNoteWindowVisible(false)}
         defaultPosition={{ x: 30, y: 128 }}
@@ -275,6 +275,7 @@ const NotesView = ({ images, onMetadataUpdate }) => {
         headerColor="#1890ff"
         editable={true}
         onSave={handleSaveNote}
+        resetEditing={!visible}
       />
 
       {/* 图片属性窗口组件 */}
@@ -289,6 +290,7 @@ const NotesView = ({ images, onMetadataUpdate }) => {
           maxHeight={500}
           headerColor="#1890ff"
           onSave={handleImagePropertiesSave}
+          resetEditing={!visible}
         />
       )}
     </NotesContainer>

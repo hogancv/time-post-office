@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import Viewer from "react-viewer";
 import exifr from "exifr";
+import EditDialog from "../EditDialog";
 import {
   ImageGrid,
   ImageCard,
@@ -338,6 +339,7 @@ const ImageManager = ({
               maxHeight={500}
               headerColor="#1890ff"
               onSave={handleImagePropertiesSave}
+              resetEditing={!visible}
             />
           )}
 
@@ -353,6 +355,7 @@ const ImageManager = ({
             headerColor="#1890ff"
             editable={true}
             onSave={handleSaveNote}
+            resetEditing={!visible}
           />
 
           {/* 时间轴导航组件 */}

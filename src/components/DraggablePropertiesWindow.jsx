@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import styled from "styled-components";
 import { Button, message, DatePicker } from "antd";
 import Draggable from "react-draggable";
@@ -69,6 +69,7 @@ const ButtonGroup = styled.div`
  * @param {number} props.width - 窗口宽度
  * @param {number} props.maxHeight - 内容区最大高度
  * @param {function} props.onSave - 保存属性回调
+ * @param {boolean} props.resetEditing - 重置编辑状态
  */
 const ImagePropertiesDialog = ({
   title = "图片属性",
@@ -80,6 +81,7 @@ const ImagePropertiesDialog = ({
   width = 300,
   maxHeight = 500,
   onSave,
+  resetEditing = false,
 }) => {
   const nodeRef = useRef(null);
   const [formData, setFormData] = useState({
@@ -92,7 +94,7 @@ const ImagePropertiesDialog = ({
   const [isEditing, setIsEditing] = useState(false);
 
   // 监听 image 的变化
-  React.useEffect(() => {
+  useEffect(() => {
     setFormData({
       make: image?.make || "",
       model: image.model || "",
@@ -101,6 +103,12 @@ const ImagePropertiesDialog = ({
       dateCreated: image.dateCreated ? dayjs(image.dateCreated) : null,
     });
   }, [image]);
+
+  useEffect(() => {
+    if (resetEditing && isEditing) {
+      setIsEditing(false);
+    }
+  }, [resetEditing, isEditing]);
 
   const handleSave = () => {
     if (onSave) {
