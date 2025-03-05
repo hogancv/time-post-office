@@ -49,7 +49,6 @@ export const ImageCard = styled.div`
   }
 
   &.highlight-card {
-    box-shadow: 0 0 0 3px #1890ff, 0 4px 12px rgba(0, 0, 0, 0.08);
     animation: pulse 2s infinite;
     outline: none; // 移除默认的轮廓
     position: relative;
@@ -61,7 +60,6 @@ export const ImageCard = styled.div`
       top: 0;
       left: 0;
       right: 0;
-      height: 5px;
       background: #1890ff;
       z-index: 2;
     }

@@ -25,7 +25,7 @@ const NotesView = ({ images, onMetadataUpdate }) => {
   const [noteWindowVisible, setNoteWindowVisible] = useState(false);
   const [currentNoteContent, setCurrentNoteContent] = useState("");
   const [imagesData, setImagesData] = useState(images);
-  const [sortDirection, setSortDirection] = useState("desc"); // 默认降序，新的在前
+  const [sortDirection, setSortDirection] = useState("asc");
   const [timeFilter, setTimeFilter] = useState(null);
   const [activeTimeItems, setActiveTimeItems] = useState([]);
   const masonryRef = useRef(null); // 添加对瀑布流容器的引用
@@ -376,6 +376,7 @@ const NotesView = ({ images, onMetadataUpdate }) => {
       <TimelineNav
         images={imagesData}
         onTimePointChange={handleTimePointChange}
+        sortDirection={sortDirection}
       />
     </NotesContainer>
   );

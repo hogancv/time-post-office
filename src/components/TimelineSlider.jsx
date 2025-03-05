@@ -9,7 +9,7 @@ const TimelineContainer = styled.div`
   position: fixed;
   right: 30px;
   top: 25vh;
-  width: 130px;
+  width: 150px;
   height: 400px;
   background-color: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
@@ -94,7 +94,7 @@ const ResetButton = styled.div`
 `;
 
 // 重命名组件为TimelineNav，更准确地反映其功能
-const TimelineNav = ({ images, onTimePointChange }) => {
+const TimelineNav = ({ images, onTimePointChange, sortDirection }) => {
   // 从图片中提取所有年月时间点
   const timePoints = useMemo(() => {
     const yearMonthMap = {};
@@ -137,7 +137,9 @@ const TimelineNav = ({ images, onTimePointChange }) => {
     });
 
     // 转换为数组并按日期排序
-    let points = Object.values(yearMonthMap).sort((a, b) => a.date - b.date);
+    let points = Object.values(yearMonthMap).sort((a, b) => {
+      return sortDirection === "asc" ? a.date - b.date : b.date - a.date;
+    });
 
     // 如果有未知日期，添加在最后面
     if (hasUnknown) {
@@ -161,7 +163,7 @@ const TimelineNav = ({ images, onTimePointChange }) => {
     }
 
     return points;
-  }, [images]);
+  }, [images, sortDirection]);
 
   // 当前选择的时间点索引
   const [selectedIndex, setSelectedIndex] = useState(-1);
