@@ -1,14 +1,14 @@
-import React, { useRef, useState } from 'react';
-import styled from 'styled-components';
-import { Button, message, DatePicker } from 'antd';
-import Draggable from 'react-draggable';
-import dayjs from 'dayjs';
+import React, { useRef, useState } from "react";
+import styled from "styled-components";
+import { Button, message, DatePicker } from "antd";
+import Draggable from "react-draggable";
+import dayjs from "dayjs";
 
 const WindowContainer = styled.div`
   position: fixed;
-  top: ${props => props.defaultPosition?.y || 100}px;
-  right: ${props => props.defaultPosition?.x || 100}px;
-  width: ${props => props.width || 300}px;
+  top: ${(props) => props.defaultPosition?.y || 100}px;
+  right: ${(props) => props.defaultPosition?.x || 100}px;
+  width: ${(props) => props.width || 300}px;
   background: white;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
@@ -18,7 +18,7 @@ const WindowContainer = styled.div`
 
 const WindowHeader = styled.div`
   padding: 10px 15px;
-  background: ${props => props.headerColor || '#1890ff'};
+  background: ${(props) => props.headerColor || "#1890ff"};
   color: white;
   font-weight: bold;
   cursor: move;
@@ -29,7 +29,7 @@ const WindowHeader = styled.div`
 
 const WindowContent = styled.div`
   padding: 15px;
-  max-height: ${props => props.maxHeight || 300}px;
+  max-height: ${(props) => props.maxHeight || 300}px;
   overflow-y: auto;
   line-height: 1.6;
 `;
@@ -83,10 +83,10 @@ const ImagePropertiesDialog = ({
 }) => {
   const nodeRef = useRef(null);
   const [formData, setFormData] = useState({
-    make: image.make || '',
-    model: image.model || '',
-    software: image.software || '',
-    artist: image.artist || '',
+    make: image?.make || "",
+    model: image.model || "",
+    software: image.software || "",
+    artist: image.artist || "",
     dateCreated: image.dateCreated ? dayjs(image.dateCreated) : null,
   });
   const [isEditing, setIsEditing] = useState(false);
@@ -94,10 +94,10 @@ const ImagePropertiesDialog = ({
   // 监听 image 的变化
   React.useEffect(() => {
     setFormData({
-      make: image.make || '',
-      model: image.model || '',
-      software: image.software || '',
-      artist: image.artist || '',
+      make: image?.make || "",
+      model: image.model || "",
+      software: image.software || "",
+      artist: image.artist || "",
       dateCreated: image.dateCreated ? dayjs(image.dateCreated) : null,
     });
   }, [image]);
@@ -106,9 +106,11 @@ const ImagePropertiesDialog = ({
     if (onSave) {
       onSave({
         ...formData,
-        dateCreated: formData.dateCreated ? formData.dateCreated.format('YYYY/MM/DD HH:mm:ss') : null,
+        dateCreated: formData.dateCreated
+          ? formData.dateCreated.format("YYYY/MM/DD HH:mm:ss")
+          : null,
       });
-      message.success('属性已保存！');
+      message.success("属性已保存！");
     }
     setIsEditing(false);
   };
@@ -121,7 +123,11 @@ const ImagePropertiesDialog = ({
 
   return (
     <Draggable nodeRef={nodeRef} handle=".window-handle" bounds="body">
-      <WindowContainer ref={nodeRef} defaultPosition={defaultPosition} width={width}>
+      <WindowContainer
+        ref={nodeRef}
+        defaultPosition={defaultPosition}
+        width={width}
+      >
         <WindowHeader className="window-handle" headerColor={headerColor}>
           <span>{title}</span>
           <div>
@@ -139,7 +145,7 @@ const ImagePropertiesDialog = ({
               <Button
                 type="text"
                 size="small"
-                style={{ color: 'white' }}
+                style={{ color: "white" }}
                 onClick={onClose}
               >
                 ✕
@@ -156,13 +162,13 @@ const ImagePropertiesDialog = ({
                   showTime
                   value={formData.dateCreated}
                   onChange={(date) => {
-                    setFormData(prev => ({
+                    setFormData((prev) => ({
                       ...prev,
-                      dateCreated: date
+                      dateCreated: date,
                     }));
                   }}
                   placeholder="拍摄时间"
-                  style={{ width: '100%' }}
+                  style={{ width: "100%" }}
                 />
               </div>
               <div className="field-group">
@@ -170,7 +176,9 @@ const ImagePropertiesDialog = ({
                 <InputField
                   type="text"
                   value={formData.make}
-                  onChange={(e) => setFormData({ ...formData, make: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, make: e.target.value })
+                  }
                   placeholder="相机品牌"
                 />
               </div>
@@ -179,7 +187,9 @@ const ImagePropertiesDialog = ({
                 <InputField
                   type="text"
                   value={formData.model}
-                  onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, model: e.target.value })
+                  }
                   placeholder="相机型号"
                 />
               </div>
@@ -188,7 +198,9 @@ const ImagePropertiesDialog = ({
                 <InputField
                   type="text"
                   value={formData.software}
-                  onChange={(e) => setFormData({ ...formData, software: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, software: e.target.value })
+                  }
                   placeholder="软件"
                 />
               </div>
@@ -197,22 +209,31 @@ const ImagePropertiesDialog = ({
                 <InputField
                   type="text"
                   value={formData.artist}
-                  onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, artist: e.target.value })
+                  }
                   placeholder="作者"
                 />
               </div>
               <ButtonGroup>
                 <Button onClick={handleCancelEdit}>取消</Button>
-                <Button type="primary" onClick={handleSave}>保存</Button>
+                <Button type="primary" onClick={handleSave}>
+                  保存
+                </Button>
               </ButtonGroup>
             </>
           ) : (
             <>
-              <p style={{ textAlign: 'left' }}>拍摄时间: {formData.dateCreated ? formData.dateCreated.format('YYYY/MM/DD HH:mm:ss') : '未设置'}</p>
-              <p style={{ textAlign: 'left' }}>相机品牌: {formData.make}</p>
-              <p style={{ textAlign: 'left' }}>相机型号: {formData.model}</p>
-              <p style={{ textAlign: 'left' }}>软件: {formData.software}</p>
-              <p style={{ textAlign: 'left' }}>作者: {formData.artist}</p>
+              <p style={{ textAlign: "left" }}>
+                拍摄时间:{" "}
+                {formData.dateCreated
+                  ? formData.dateCreated.format("YYYY/MM/DD HH:mm:ss")
+                  : "未设置"}
+              </p>
+              <p style={{ textAlign: "left" }}>相机品牌: {formData.make}</p>
+              <p style={{ textAlign: "left" }}>相机型号: {formData.model}</p>
+              <p style={{ textAlign: "left" }}>软件: {formData.software}</p>
+              <p style={{ textAlign: "left" }}>作者: {formData.artist}</p>
             </>
           )}
         </WindowContent>
@@ -221,4 +242,4 @@ const ImagePropertiesDialog = ({
   );
 };
 
-export default ImagePropertiesDialog; 
+export default ImagePropertiesDialog;

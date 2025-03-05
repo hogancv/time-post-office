@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useRef } from "react";
-import { Popover, message, Empty, Button, Badge } from "antd";
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import { Popover, Empty, Button } from "antd";
 import {
   SortAscendingOutlined,
   SortDescendingOutlined,
@@ -8,6 +8,7 @@ import Viewer from "react-viewer";
 import DraggableNoteWindow from "../DraggableNoteWindow";
 import TimelineNav from "../TimelineSlider";
 import DraggablePropertiesWindow from "../DraggablePropertiesWindow";
+import useImageViewer from "../../hooks/useImageViewer";
 import {
   NotesContainer,
   ContentWrapper,
@@ -21,21 +22,11 @@ import {
 } from "./NotesView.styled";
 
 const NotesView = ({ images, onMetadataUpdate }) => {
-  const [visible, setVisible] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [currentNoteContent, setCurrentNoteContent] = useState("");
   const [imagesData, setImagesData] = useState(images);
   const [sortDirection, setSortDirection] = useState("asc");
-  const [activeTimeItems, setActiveTimeItems] = useState([]);
-  const masonryRef = useRef(null); // 添加对瀑布流容器的引用
-  const [noteWindowVisible, setNoteWindowVisible] = useState(false);
-  const [imagePropertiesVisible, setImagePropertiesVisible] = useState(false);
-  const [currentImageProperties, setCurrentImageProperties] = useState({});
+  const masonryRef = useRef(null);
 
-  const toggleSortDirection = () => {
-    setSortDirection(sortDirection === "desc" ? "asc" : "desc");
-  };
-
+  // 首先计算具有笔记的图片
   const imagesWithNotes = useMemo(() => {
     let filteredImages = [...imagesData].filter(
       (img) => img.notes && img.notes.trim().length > 0
@@ -60,58 +51,43 @@ const NotesView = ({ images, onMetadataUpdate }) => {
     });
   }, [imagesData, sortDirection]);
 
-  // 处理时间点选择，定位到对应的图片，但不筛选列表
-  const handleTimePointChange = (date, isUnknown) => {
-    // 清除之前的高亮状态和数据
-    setActiveTimeItems([]);
+  // 使用自定义Hook处理图片查看相关逻辑
+  const {
+    visible,
+    setVisible,
+    currentIndex,
+    noteWindowVisible,
+    setNoteWindowVisible,
+    propertiesWindowVisible,
+    setPropertiesWindowVisible,
+    currentNoteContent,
+    selectedImage, // 添加了selectedImage
+    activeTimeItems,
+    viewerImages,
+    handleImageClick,
+    handleImageChange,
+    handleViewerClose,
+    handleSaveNote,
+    handleImagePropertiesSave,
+    handleTimePointChange,
+    resetHighlights,
+  } = useImageViewer(imagesWithNotes, onMetadataUpdate, sortDirection);
 
-    // 如果是重置（点击null），直接返回
-    if (!date && !isUnknown) {
-      return;
-    }
+  const toggleSortDirection = () => {
+    setSortDirection(sortDirection === "desc" ? "asc" : "desc");
+  };
 
-    // 查找符合条件的图片
-    let targetImages = [];
+  // 当外部images变化时更新内部状态
+  useEffect(() => {
+    setImagesData(images);
+  }, [images]);
 
-    if (isUnknown) {
-      // 查找未知日期的图片
-      targetImages = imagesWithNotes.filter(
-        (img) =>
-          !img.dateCreated ||
-          img.dateCreated === "未知" ||
-          isNaN(new Date(img.dateCreated).getTime())
-      );
-    } else if (date) {
-      // 查找指定年月的图片
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
+  // 处理时间点选择后DOM操作
+  const handleTimePointSelect = (date, isUnknown) => {
+    const result = handleTimePointChange(date, isUnknown);
+    if (!result) return;
 
-      targetImages = imagesWithNotes.filter((img) => {
-        if (img.dateCreated && img.dateCreated !== "未知") {
-          try {
-            const imgDate = new Date(img.dateCreated);
-            if (!isNaN(imgDate.getTime())) {
-              return (
-                imgDate.getFullYear() === year &&
-                imgDate.getMonth() + 1 === month
-              );
-            }
-          } catch (e) {
-            return false;
-          }
-        }
-        return false;
-      });
-    }
-
-    // 如果找不到匹配的图片，提前返回
-    if (!targetImages || targetImages.length === 0) {
-      return;
-    }
-
-    // 记录当前高亮的图片路径
-    const highlightPaths = targetImages.map((img) => img.path || img.url);
-    setActiveTimeItems(highlightPaths);
+    const { highlightPaths } = result;
 
     // 延迟执行DOM操作，确保React已经完成渲染
     setTimeout(() => {
@@ -148,11 +124,9 @@ const NotesView = ({ images, onMetadataUpdate }) => {
     }, 300); // 增加延迟确保DOM完全加载
   };
 
-  // 重置高亮
-  const resetHighlights = () => {
-    // 清除高亮状态
-    setActiveTimeItems([]);
-
+  // 重置高亮并清除DOM中的高亮类
+  const resetHighlightDOM = () => {
+    resetHighlights();
     // 清除DOM中的高亮类
     const highlightedCards = document.querySelectorAll(".highlight-card");
     highlightedCards.forEach((el) => {
@@ -160,80 +134,11 @@ const NotesView = ({ images, onMetadataUpdate }) => {
     });
   };
 
-  const handleMetadataUpdate = async (imagePath, updates) => {
-    await onMetadataUpdate(imagePath, updates);
-  };
-
-  // 当外部images变化时更新内部状态
-  React.useEffect(() => {
-    setImagesData(images);
-  }, [images]);
-
+  // 处理图片点击的封装，与Hook集成
   const onImageClick = (index) => {
-    setCurrentIndex(index);
-    setVisible(true);
-
-    // 确保获取到有效的图片属性
-    const selectedImage = imagesWithNotes[index];
-    if (selectedImage) {
-      setCurrentImageProperties(selectedImage);
-      setImagePropertiesVisible(true);
-      setNoteWindowVisible(true);
-    }
+    const image = imagesWithNotes[index];
+    handleImageClick(image, index);
   };
-
-  // 处理图片切换
-  const handleImageChange = (activeImage, index) => {
-    setCurrentIndex(index);
-    // 更新当前图片属性
-    const selectedImage = imagesWithNotes[index];
-    setCurrentImageProperties(selectedImage);
-    setCurrentNoteContent(selectedImage.notes);
-  };
-
-  // 在关闭图片查看器时，隐藏图片属性窗口
-  const handleViewerClose = () => {
-    setVisible(false);
-    setImagePropertiesVisible(false); // 关闭图片查看器时隐藏属性窗口
-    setNoteWindowVisible(false);
-  };
-
-  // 保存笔记内容
-  const handleSaveNote = async (content) => {
-    const updatedImages = [...imagesData];
-    const currentImage = imagesWithNotes[currentIndex];
-
-    // 找到对应的图片并更新笔记
-    const originalIndex = updatedImages.findIndex(
-      (img) => img.path === currentImage.path || img.url === currentImage.url
-    );
-
-    if (originalIndex !== -1) {
-      // 先更新本地状态
-      updatedImages[originalIndex] = {
-        ...updatedImages[originalIndex],
-        notes: content,
-      };
-      setImagesData(updatedImages);
-      setCurrentNoteContent(content);
-
-      // 调用 handleMetadataUpdate 方法以持久化更改
-      try {
-        await handleMetadataUpdate(currentImage.path, { notes: content });
-      } catch (error) {
-        console.error("保存笔记失败:", error);
-        message.error("保存笔记失败，请重试");
-      }
-    }
-  };
-
-  // 准备图片数据
-  const viewerImages = useMemo(() => {
-    return imagesWithNotes.map((img) => ({
-      src: img.url || "",
-      alt: img.name || "",
-    }));
-  }, [imagesWithNotes]);
 
   // 确定不同屏幕宽度下的列数
   const breakpointColumns = {
@@ -241,18 +146,6 @@ const NotesView = ({ images, onMetadataUpdate }) => {
     1400: 3, // 宽度 <= 1400px 时是3列
     1100: 2, // 宽度 <= 1100px 时是2列
     700: 1, // 宽度 <= 700px 时是1列
-  };
-
-  const handleImagePropertiesSave = async (updatedProperties) => {
-    // 处理保存逻辑
-    const updatedImages = [...imagesData];
-    const originalIndex = updatedImages.findIndex(img => img.path === currentImageProperties.path);
-    if (originalIndex !== -1) {
-      updatedImages[originalIndex] = { ...updatedImages[originalIndex], ...updatedProperties };
-      setImagesData(updatedImages);
-      // 这里可以调用 onMetadataUpdate 进行持久化
-      await handleMetadataUpdate(currentImageProperties.path, updatedProperties);
-    }
   };
 
   return (
@@ -277,64 +170,76 @@ const NotesView = ({ images, onMetadataUpdate }) => {
           </Button>
 
           {activeTimeItems.length > 0 && (
-            <Button onClick={resetHighlights}>
+            <Button onClick={resetHighlightDOM}>
               清除高亮 ({activeTimeItems.length})
             </Button>
           )}
         </SortButtonContainer>
 
-        <StyledMasonry
-          ref={masonryRef}
-          breakpointCols={breakpointColumns}
-          className="masonry-grid"
-          columnClassName="masonry-column"
-        >
-          {imagesWithNotes.map((image, index) => (
-            <ImageCard
-              key={image.path || index}
-              onClick={() => onImageClick(index)}
-              className={
-                activeTimeItems.includes(image.path || image.url)
-                  ? "highlight-card image-card"
-                  : "image-card"
-              }
-              data-path={image.path || image.url}
-              data-index={index}
-            >
-              <img src={image.url} alt={image.name || "图片"} loading="lazy" />
-              {image.dateCreated && image.dateCreated !== "未知" && (
-                <DateLabel>
-                  {new Date(image.dateCreated).toLocaleDateString()}
-                </DateLabel>
-              )}
-              {(!image.dateCreated || image.dateCreated === "未知") && (
-                <DateLabel className="unknown-date">未知时间</DateLabel>
-              )}
-              <NoteContent>
-                <Popover
-                  content={
-                    <div style={{ whiteSpace: "pre-wrap", maxWidth: "400px" }}>
-                      {image.notes}
-                    </div>
-                  }
-                  title={
-                    <div style={{ fontWeight: "bold" }}>
-                      {image.name || "图片笔记"}
-                    </div>
-                  }
-                  trigger="hover"
-                  placement="bottom"
-                >
-                  <p>
-                    {image.notes?.length > 50
-                      ? `${image.notes.slice(0, 50)}...`
-                      : image.notes}
-                  </p>
-                </Popover>
-              </NoteContent>
-            </ImageCard>
-          ))}
-        </StyledMasonry>
+        {imagesWithNotes.length > 0 ? (
+          <StyledMasonry
+            ref={masonryRef}
+            breakpointCols={breakpointColumns}
+            className="masonry-grid"
+            columnClassName="masonry-column"
+          >
+            {imagesWithNotes.map((image, index) => (
+              <ImageCard
+                key={image.path || index}
+                onClick={() => onImageClick(index)}
+                className={
+                  activeTimeItems.includes(image.path || image.url)
+                    ? "highlight-card image-card"
+                    : "image-card"
+                }
+                data-path={image.path || image.url}
+                data-index={index}
+              >
+                <img
+                  src={image.url}
+                  alt={image.name || "图片"}
+                  loading="lazy"
+                />
+                {image.dateCreated && image.dateCreated !== "未知" && (
+                  <DateLabel>
+                    {new Date(image.dateCreated).toLocaleDateString()}
+                  </DateLabel>
+                )}
+                {(!image.dateCreated || image.dateCreated === "未知") && (
+                  <DateLabel className="unknown-date">未知时间</DateLabel>
+                )}
+                <NoteContent>
+                  <Popover
+                    content={
+                      <div
+                        style={{ whiteSpace: "pre-wrap", maxWidth: "400px" }}
+                      >
+                        {image.notes}
+                      </div>
+                    }
+                    title={
+                      <div style={{ fontWeight: "bold" }}>
+                        {image.name || "图片笔记"}
+                      </div>
+                    }
+                    trigger="hover"
+                    placement="bottom"
+                  >
+                    <p>
+                      {image.notes?.length > 50
+                        ? `${image.notes.slice(0, 50)}...`
+                        : image.notes}
+                    </p>
+                  </Popover>
+                </NoteContent>
+              </ImageCard>
+            ))}
+          </StyledMasonry>
+        ) : (
+          <EmptyContainer>
+            <Empty description="没有找到笔记" />
+          </EmptyContainer>
+        )}
       </ContentWrapper>
 
       {/* 图片查看器 */}
@@ -352,10 +257,16 @@ const NotesView = ({ images, onMetadataUpdate }) => {
         />
       )}
 
-      {/* 使用可拖动笔记窗口组件 */}
+      {/* 时间导航组件 */}
+      <TimelineNav
+        images={imagesData}
+        onTimePointChange={handleTimePointSelect}
+        sortDirection={sortDirection}
+      />
+      {/* 可拖动笔记窗口组件 */}
       <DraggableNoteWindow
         title="图片笔记"
-        content={currentNoteContent || "无笔记内容"}
+        content={currentNoteContent}
         visible={visible && noteWindowVisible}
         onClose={() => setNoteWindowVisible(false)}
         defaultPosition={{ x: 30, y: 128 }}
@@ -366,21 +277,20 @@ const NotesView = ({ images, onMetadataUpdate }) => {
         onSave={handleSaveNote}
       />
 
-      {/* 时间导航组件 - 现在使用文字列表形式 */}
-      <TimelineNav
-        images={imagesData}
-        onTimePointChange={handleTimePointChange}
-        sortDirection={sortDirection}
-      />
-
-      <DraggablePropertiesWindow
-        title="图片属性"
-        defaultPosition={{ x: 30, y: 520 }}
-        image={currentImageProperties}
-        visible={visible && imagePropertiesVisible}
-        onClose={() => setImagePropertiesVisible(false)}
-        onSave={handleImagePropertiesSave}
-      />
+      {/* 图片属性窗口组件 */}
+      {selectedImage && (
+        <DraggablePropertiesWindow
+          title="图片属性"
+          image={visible && selectedImage}
+          visible={visible && propertiesWindowVisible}
+          onClose={() => setPropertiesWindowVisible(false)}
+          defaultPosition={{ x: 30, y: 520 }}
+          width={300}
+          maxHeight={500}
+          headerColor="#1890ff"
+          onSave={handleImagePropertiesSave}
+        />
+      )}
     </NotesContainer>
   );
 };

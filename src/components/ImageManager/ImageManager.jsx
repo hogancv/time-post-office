@@ -1,9 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
-
 import Viewer from "react-viewer";
-
 import exifr from "exifr";
-
 import {
   ImageGrid,
   ImageCard,
@@ -33,6 +30,7 @@ import { Popover } from "antd";
 import DraggableNoteWindow from "../DraggableNoteWindow";
 import TimelineNav from "../TimelineSlider";
 import DraggablePropertiesWindow from "../DraggablePropertiesWindow";
+import useImageViewer from "../../hooks/useImageViewer";
 
 const ImageManager = ({
   images,
@@ -48,50 +46,25 @@ const ImageManager = ({
   const [selectedModel, setSelectedModel] = useState("all");
   const [sortOrder, setSortOrder] = useState("desc");
   const inputRef = useRef(null);
-
-  const [visible, setVisible] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [viewerImages, setViewerImages] = useState([]);
-
   const [editingImage, setEditingImage] = useState(null);
-
-  const [selectedImage, setSelectedImage] = useState(null);
-
-  const [noteWindowVisible, setNoteWindowVisible] = useState(false);
-  const [currentNoteContent, setCurrentNoteContent] = useState("");
-
-  const [propertiesWindowVisible, setPropertiesWindowVisible] = useState(false);
-
-  // 为月份组创建引用
+  const [highlightedMonth, setHighlightedMonth] = useState(null);
   const monthRefs = useRef({});
 
-  // 突出显示当前选择的月份
-  const [highlightedMonth, setHighlightedMonth] = useState(null);
-
   // 获取所有不重复的相机型号
-
   const uniqueModels = useMemo(() => {
     const models = new Set(images.map((img) => img.model));
-
     const modelArray = Array.from(models);
-
-    // 确保未知型号总是在列表最后
-
     const sortedModels = modelArray
-
       .filter((model) => model !== "未知")
-
       .sort((a, b) => a.localeCompare(b));
 
     if (modelArray.includes("未知")) {
       sortedModels.push("未知");
     }
-
     return sortedModels;
   }, [images]);
 
   // 按月份分组的图片
-
   const groupedImages = useMemo(() => {
     // 首先根据筛选条件过滤图片
     let filtered = images;
@@ -106,7 +79,7 @@ const ImageManager = ({
       (img) => selectedModel === "all" || img.model === selectedModel
     );
 
-    // 排序逻辑保持不变
+    // 排序逻辑
     const sorted = [...filtered].sort((a, b) => {
       if (a.dateCreated === "未知" && b.dateCreated === "未知") return 0;
       if (a.dateCreated === "未知") return 1;
@@ -116,7 +89,7 @@ const ImageManager = ({
       return sortOrder === "desc" ? dateB - dateA : dateA - dateB;
     });
 
-    // 分组逻辑保持不变
+    // 分组逻辑
     const groups = {};
     sorted.forEach((img) => {
       let monthKey;
@@ -132,7 +105,7 @@ const ImageManager = ({
       groups[monthKey].push(img);
     });
 
-    // 月份排序逻辑保持不变
+    // 月份排序逻辑
     const orderedGroups = {};
     const monthKeys = Object.keys(groups).sort((a, b) => {
       if (a === "未知时间") return 1;
@@ -149,6 +122,29 @@ const ImageManager = ({
 
     return orderedGroups;
   }, [images, selectedModel, sortOrder, activeFilter]);
+
+  // 创建扁平化的已筛选图片数组，用于图片查看器
+  const filteredImages = useMemo(() => {
+    return Object.values(groupedImages).flat();
+  }, [groupedImages]);
+
+  // 使用自定义Hook处理图片查看相关逻辑
+  const {
+    visible,
+    setVisible,
+    currentIndex,
+    selectedImage,
+    noteWindowVisible,
+    setNoteWindowVisible,
+    propertiesWindowVisible,
+    setPropertiesWindowVisible,
+    currentNoteContent,
+    viewerImages,
+    handleImageClick: baseHandleImageClick,
+    handleImageChange,
+    handleSaveNote,
+    handleImagePropertiesSave,
+  } = useImageViewer(filteredImages, onMetadataUpdate, sortOrder);
 
   // 初始化 IndexedDB
   useEffect(() => {
@@ -167,18 +163,13 @@ const ImageManager = ({
         dateCreated: exifData?.DateTimeOriginal
           ? new Date(exifData.DateTimeOriginal).toLocaleString()
           : "未知",
-
         make: exifData?.Make || "未知",
-
         model: exifData?.Model || "未知",
-
         software: exifData?.Software || "未知",
-
         artist: exifData?.Artist || "未知",
       };
     } catch (error) {
       console.warn("读取EXIF数据失败:", error);
-
       return {
         dateCreated: "未知",
         make: "未知",
@@ -191,7 +182,6 @@ const ImageManager = ({
 
   const handleFolderSelect = async (event) => {
     setError("");
-
     setIsLoading(true);
 
     try {
@@ -199,9 +189,7 @@ const ImageManager = ({
 
       if (files.length === 0) {
         setError("未选择任何文件，请重试");
-
         setIsLoading(false);
-
         return;
       }
 
@@ -213,9 +201,7 @@ const ImageManager = ({
 
       if (imageFiles.length === 0) {
         setError("所选文件夹中没有找到图片文件");
-
         setIsLoading(false);
-
         return;
       }
 
@@ -224,8 +210,6 @@ const ImageManager = ({
           try {
             const exifData = await getExifData(file);
             const imagePath = file.webkitRelativePath || file.name;
-
-            // 获取存储的元数据
             const savedMetadata = await imageDB.getMetadata(imagePath);
 
             const imageData = {
@@ -258,7 +242,6 @@ const ImageManager = ({
       }
     } catch (error) {
       console.error("处理文件夹失败:", error);
-
       setError("处理文件夹时出错，请重试");
     }
 
@@ -300,109 +283,6 @@ const ImageManager = ({
     }
   };
 
-  // 预处理所有查看器图片数据，在图片过滤或排序后重新计算
-  const { allViewerImages, imageIndexMap, indexToPathMap } = useMemo(() => {
-    const allImages = [];
-    const indexMap = new Map(); // 用于存储每个图片路径到全局索引的映射
-    const pathMap = new Map(); // 用于存储全局索引到图片路径的映射
-
-    let globalIndex = 0;
-    Object.values(groupedImages).forEach((monthImages) => {
-      monthImages.forEach((image) => {
-        allImages.push({
-          src: image.url,
-          alt: image.name || "",
-          notes: image.notes || "暂无笔记",
-          path: image.path, // 添加路径信息到查看器数据中
-        });
-        indexMap.set(image.path, globalIndex);
-        pathMap.set(globalIndex, image.path);
-        globalIndex++;
-      });
-    });
-
-    return {
-      allViewerImages: allImages,
-      imageIndexMap: indexMap,
-      indexToPathMap: pathMap,
-    };
-  }, [groupedImages]);
-
-  // 更新查看器图片数组当筛选或排序发生变化时
-  useEffect(() => {
-    setViewerImages(allViewerImages);
-  }, [allViewerImages]);
-
-  // 处理图片点击
-  const handleImageClick = (image) => {
-    const index = imageIndexMap.get(image.path);
-    setActiveIndex(index);
-    setSelectedImage(image); // 设置选中的图片
-    setVisible(true);
-    setNoteWindowVisible(true);
-    setPropertiesWindowVisible(true);
-    setCurrentNoteContent(image.notes || ""); // 直接设置当前笔记内容
-  };
-
-  // 处理图片切换
-  const handleImageChange = (activeImage, index) => {
-    setActiveIndex(index);
-
-    // 使用当前索引找到对应图片的路径
-    const currentPath = indexToPathMap.get(index);
-
-    if (currentPath) {
-      // 使用路径找到完整的图片对象
-      const currentImage = images.find((img) => img.path === currentPath);
-
-      if (currentImage) {
-        setSelectedImage(currentImage);
-        setCurrentNoteContent(currentImage.notes || "");
-      } else {
-        console.warn("未找到路径对应的图片:", currentPath);
-      }
-    } else {
-      console.warn("未找到索引对应的路径:", index);
-    }
-  };
-
-  // 保存笔记
-  const handleSaveNote = async (newNoteContent) => {
-    if (selectedImage) {
-      // 获取当前真实的选中图片
-      const currentPath = indexToPathMap.get(activeIndex);
-      let imageToUpdate = selectedImage;
-
-      // 如果路径与当前选中的图片不一致，重新获取正确的图片对象
-      if (currentPath && currentPath !== selectedImage.path) {
-        const correctImage = images.find((img) => img.path === currentPath);
-        if (correctImage) {
-          imageToUpdate = correctImage;
-        }
-      }
-
-      // 更新图片的笔记内容
-      const updatedImage = { ...imageToUpdate, notes: newNoteContent };
-      await handleMetadataUpdate(imageToUpdate.path, { notes: newNoteContent });
-
-      // 更新状态
-      setSelectedImage(updatedImage);
-      setCurrentNoteContent(newNoteContent);
-      // 更新viewerImages中的笔记内容
-      const updatedViewerImages = [...viewerImages];
-      updatedViewerImages[activeIndex] = {
-        ...updatedViewerImages[activeIndex],
-        notes: newNoteContent,
-      };
-      setViewerImages(updatedViewerImages);
-    }
-  };
-
-  // 处理元数据更新
-  const handleMetadataUpdate = async (imagePath, updates) => {
-    await onMetadataUpdate(imagePath, updates);
-  };
-
   // 导出配置
   const handleExportConfig = async () => {
     try {
@@ -434,26 +314,13 @@ const ImageManager = ({
     }
   };
 
-
-
-  // 监控 selectedImage 的变化，自动更新 currentNoteContent
-  useEffect(() => {
-    if (selectedImage) {
-      setCurrentNoteContent(selectedImage.notes || "");
-    }
-  }, [selectedImage]);
-
-  // 设置月份引用
-  useEffect(() => {
-    // 初始化引用对象
-    monthRefs.current = {};
-  }, []);
-
-  const handleImagePropertiesSave = async (updatedProperties) => {
-    if (selectedImage) {
-      const updatedImage = { ...selectedImage, ...updatedProperties };
-      await handleMetadataUpdate(updatedImage.path, updatedProperties);
-      setSelectedImage(updatedImage);
+  // 处理图片点击，需要找到图片在filteredImages中的索引
+  const handleImageClick = (image) => {
+    const index = filteredImages.findIndex(
+      (img) => img.path === image.path || img.url === image.url
+    );
+    if (index !== -1) {
+      baseHandleImageClick(image, index);
     }
   };
 
@@ -462,7 +329,7 @@ const ImageManager = ({
       <ContentContainer>
         <Title>图片管理器</Title>
         <ContentWrapper>
-          {/* 添加可拖动属性窗口 */}
+          {/* 可拖动属性窗口 */}
           {selectedImage && (
             <DraggablePropertiesWindow
               title="图片属性"
@@ -476,7 +343,8 @@ const ImageManager = ({
               onSave={handleImagePropertiesSave}
             />
           )}
-          {/* 使用可拖动笔记窗口组件 */}
+
+          {/* 可拖动笔记窗口 */}
           <DraggableNoteWindow
             title="图片笔记"
             content={currentNoteContent}
@@ -490,7 +358,7 @@ const ImageManager = ({
             onSave={handleSaveNote}
           />
 
-          {/* 添加时间轴导航组件 */}
+          {/* 时间轴导航组件 */}
           {!showUploader && images.length > 0 && (
             <TimelineNav
               images={images}
@@ -629,14 +497,18 @@ const ImageManager = ({
                       >
                         <Popover
                           content={
-                            <div
-                              style={{
-                                whiteSpace: "pre-wrap",
-                                maxWidth: "400px",
-                              }}
-                            >
-                              {image.notes}
-                            </div>
+                            image.notes ? (
+                              <div
+                                style={{
+                                  whiteSpace: "pre-wrap",
+                                  maxWidth: "400px",
+                                }}
+                              >
+                                {image.notes}
+                              </div>
+                            ) : (
+                              <div>暂无笔记</div>
+                            )
                           }
                           title="图片笔记"
                           trigger="hover"
@@ -729,7 +601,7 @@ const ImageManager = ({
                 onChange={handleImageChange}
                 onClose={() => setVisible(false)}
                 images={viewerImages}
-                activeIndex={activeIndex}
+                activeIndex={currentIndex}
                 onMaskClick={() => setVisible(false)}
                 downloadable={true}
                 zoomable={true}
@@ -748,15 +620,12 @@ const ImageManager = ({
                 <EditDialog
                   image={editingImage}
                   onSave={async (updates) => {
-                    await handleMetadataUpdate(editingImage.path, updates);
+                    await onMetadataUpdate(editingImage.path, updates);
                     setEditingImage(null);
                   }}
                   onClose={() => setEditingImage(null)}
                 />
               )}
-
-
-
             </>
           )}
 
