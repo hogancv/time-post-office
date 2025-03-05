@@ -402,67 +402,70 @@ const ImageManager = ({
           ) : (
             <>
               <FilterBar>
-                <Select
-                  value={selectedModel}
-                  onChange={(value) => setSelectedModel(value)}
-                  style={{ width: 200, marginRight: 10 }}
-                >
-                  <Select.Option value="all">所有相机型号</Select.Option>
-                  {uniqueModels.map((model) => (
-                    <Select.Option key={model} value={model}>
-                      {model}
-                    </Select.Option>
-                  ))}
-                </Select>
+                <div>
+                  <Select
+                    value={selectedModel}
+                    onChange={(value) => setSelectedModel(value)}
+                    style={{ width: 300, marginRight: 10 }}
+                  >
+                    <Select.Option value="all">所有相机型号</Select.Option>
+                    {uniqueModels.map((model) => (
+                      <Select.Option key={model} value={model}>
+                        {model}
+                      </Select.Option>
+                    ))}
+                  </Select>
 
-                <Button
-                  type="primary"
-                  icon={
-                    sortOrder === "desc" ? (
-                      <SortDescendingOutlined />
-                    ) : (
-                      <SortAscendingOutlined />
-                    )
-                  }
-                  onClick={() =>
-                    setSortOrder(sortOrder === "desc" ? "asc" : "desc")
-                  }
-                  style={{ marginRight: 8 }}
-                >
-                  {sortOrder === "desc" ? "时间降序" : "时间升序"}
-                </Button>
+                  <Button
+                    type="primary"
+                    icon={
+                      sortOrder === "desc" ? (
+                        <SortDescendingOutlined />
+                      ) : (
+                        <SortAscendingOutlined />
+                      )
+                    }
+                    onClick={() =>
+                      setSortOrder(sortOrder === "desc" ? "asc" : "desc")
+                    }
+                    style={{ marginRight: 8, width: 120 }}
+                  >
+                    {sortOrder === "desc" ? "时间降序" : "时间升序"}
+                  </Button>
+                </div>
+                <div>
+                  <Button
+                    type="primary"
+                    danger
+                    onClick={handleReset}
+                    style={{ marginRight: 10 }}
+                  >
+                    重新选择文件夹
+                  </Button>
 
-                <Button
-                  type="primary"
-                  danger
-                  onClick={handleReset}
-                  style={{ marginRight: 10 }}
-                >
-                  重新选择文件夹
-                </Button>
-
-                <Button
-                  type="default"
-                  onClick={handleExportConfig}
-                  style={{ marginRight: 10 }}
-                >
-                  导出配置
-                </Button>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportConfig}
-                  style={{ display: "none" }}
-                  id="config-import"
-                />
-                <Button
-                  type="default"
-                  onClick={() =>
-                    document.getElementById("config-import").click()
-                  }
-                >
-                  导入配置
-                </Button>
+                  <Button
+                    type="default"
+                    onClick={handleExportConfig}
+                    style={{ marginRight: 10 }}
+                  >
+                    导出配置
+                  </Button>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportConfig}
+                    style={{ display: "none" }}
+                    id="config-import"
+                  />
+                  <Button
+                    type="default"
+                    onClick={() =>
+                      document.getElementById("config-import").click()
+                    }
+                  >
+                    导入配置
+                  </Button>
+                </div>
               </FilterBar>
 
               {Object.entries(groupedImages).map(([monthKey, monthImages]) => (

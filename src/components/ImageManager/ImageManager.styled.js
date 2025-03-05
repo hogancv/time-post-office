@@ -32,7 +32,6 @@ export const HelpText = styled.label`
 `;
 
 export const ImageGrid = styled.div`
-
   width: 100%;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -91,7 +90,6 @@ export const ImageInfo = styled.div`
   }
 `;
 
-
 export const Loading = styled.div`
   text-align: center;
   padding: 30px;
@@ -112,8 +110,8 @@ export const FilterBar = styled.div`
   display: flex;
   gap: 20px;
   align-items: center;
+  justify-content: space-between;
 `;
-
 
 export const MonthGroup = styled.div`
   margin: 30px 0 15px;
