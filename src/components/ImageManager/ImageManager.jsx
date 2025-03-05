@@ -33,6 +33,7 @@ import ContextMenu from "../ContextMenu";
 import { Popover } from "antd";
 import DraggableNoteWindow from "../DraggableNoteWindow";
 import TimelineNav from "../TimelineSlider";
+import DraggablePropertiesWindow from "../DraggablePropertiesWindow";
 
 const ImageManager = ({
   images,
@@ -60,6 +61,8 @@ const ImageManager = ({
 
   const [noteWindowVisible, setNoteWindowVisible] = useState(false);
   const [currentNoteContent, setCurrentNoteContent] = useState("");
+
+  const [propertiesWindowVisible, setPropertiesWindowVisible] = useState(false);
 
   // 为月份组创建引用
   const monthRefs = useRef({});
@@ -332,14 +335,15 @@ const ImageManager = ({
     setViewerImages(allViewerImages);
   }, [allViewerImages]);
 
-  // 处理图片点击 - 简化版
+  // 处理图片点击
   const handleImageClick = (image) => {
     const index = imageIndexMap.get(image.path);
     setActiveIndex(index);
-    setCurrentNoteContent(image.notes || "");
-    setSelectedImage(image); // 添加这一行以确保selectedImage被正确设置
+    setSelectedImage(image); // 设置选中的图片
     setVisible(true);
     setNoteWindowVisible(true);
+    setPropertiesWindowVisible(true);
+    setCurrentNoteContent(image.notes || ""); // 直接设置当前笔记内容
   };
 
   // 处理图片切换
@@ -386,7 +390,6 @@ const ImageManager = ({
       // 更新状态
       setSelectedImage(updatedImage);
       setCurrentNoteContent(newNoteContent);
-
       // 更新viewerImages中的笔记内容
       const updatedViewerImages = [...viewerImages];
       updatedViewerImages[activeIndex] = {
@@ -440,7 +443,6 @@ const ImageManager = ({
       x: e.clientX,
       y: e.clientY,
     });
-    // 如果拍摄时间是"未知"，设置为当前时间
     const imageWithDefaultDate = {
       ...image,
       dateCreated:
@@ -449,7 +451,15 @@ const ImageManager = ({
           : image.dateCreated,
     };
     setSelectedImage(imageWithDefaultDate);
+    setCurrentNoteContent(imageWithDefaultDate.notes || ""); // 直接设置当前笔记内容
   };
+
+  // 监控 selectedImage 的变化，自动更新 currentNoteContent
+  useEffect(() => {
+    if (selectedImage) {
+      setCurrentNoteContent(selectedImage.notes || "");
+    }
+  }, [selectedImage]);
 
   // 设置月份引用
   useEffect(() => {
@@ -457,15 +467,37 @@ const ImageManager = ({
     monthRefs.current = {};
   }, []);
 
+  const handleImagePropertiesSave = async (updatedProperties) => {
+    if (selectedImage) {
+      const updatedImage = { ...selectedImage, ...updatedProperties };
+      await handleMetadataUpdate(updatedImage.path, updatedProperties);
+      setSelectedImage(updatedImage);
+    }
+  };
+
   return (
     <MainContainer>
       <ContentContainer>
         <Title>图片管理器</Title>
         <ContentWrapper>
+          {/* 添加可拖动属性窗口 */}
+          {selectedImage && (
+            <DraggablePropertiesWindow
+              title="图片属性"
+              image={visible && selectedImage}
+              visible={visible && propertiesWindowVisible}
+              onClose={() => setPropertiesWindowVisible(false)}
+              defaultPosition={{ x: 30, y: 520 }}
+              width={300}
+              maxHeight={500}
+              headerColor="#1890ff"
+              onSave={handleImagePropertiesSave}
+            />
+          )}
           {/* 使用可拖动笔记窗口组件 */}
           <DraggableNoteWindow
             title="图片笔记"
-            content={currentNoteContent || "无笔记内容"}
+            content={currentNoteContent}
             visible={visible && noteWindowVisible}
             onClose={() => setNoteWindowVisible(false)}
             defaultPosition={{ x: 30, y: 128 }}
@@ -766,6 +798,8 @@ const ImageManager = ({
                   }}
                 />
               )}
+
+
             </>
           )}
 

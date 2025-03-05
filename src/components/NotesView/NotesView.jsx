@@ -7,7 +7,7 @@ import {
 import Viewer from "react-viewer";
 import DraggableNoteWindow from "../DraggableNoteWindow";
 import TimelineNav from "../TimelineSlider";
-import ImagePropertiesDialog from "../DraggablePropertiesWindow";
+import DraggablePropertiesWindow from "../DraggablePropertiesWindow";
 import {
   NotesContainer,
   ContentWrapper,
@@ -373,7 +373,7 @@ const NotesView = ({ images, onMetadataUpdate }) => {
         sortDirection={sortDirection}
       />
 
-      <ImagePropertiesDialog
+      <DraggablePropertiesWindow
         title="图片属性"
         defaultPosition={{ x: 30, y: 520 }}
         image={currentImageProperties}

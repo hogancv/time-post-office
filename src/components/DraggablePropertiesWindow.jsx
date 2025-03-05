@@ -12,7 +12,7 @@ const WindowContainer = styled.div`
   background: white;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
-  z-index: 1100;
+  z-index: 1049;
   overflow: hidden;
 `;
 
