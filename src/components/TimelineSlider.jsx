@@ -178,6 +178,7 @@ const TimelineNav = ({ images, onTimePointChange, sortDirection }) => {
     }
   }, [timePoints]);
 
+
   // 处理时间点点击
   const handleTimeClick = (index) => {
     // 如果是已选中的，则取消选择

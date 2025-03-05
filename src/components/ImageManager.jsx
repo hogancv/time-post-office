@@ -32,6 +32,7 @@ import EditDialog from "./EditDialog";
 import ContextMenu from "./ContextMenu";
 import { Popover } from "antd";
 import DraggableNoteWindow from "./DraggableNoteWindow";
+import TimelineNav from "./TimelineSlider";
 
 const ImageManager = ({
   images,
@@ -59,6 +60,12 @@ const ImageManager = ({
 
   const [noteWindowVisible, setNoteWindowVisible] = useState(false);
   const [currentNoteContent, setCurrentNoteContent] = useState("");
+  
+  // 为月份组创建引用
+  const monthRefs = useRef({});
+  
+  // 突出显示当前选择的月份
+  const [highlightedMonth, setHighlightedMonth] = useState(null);
 
   // 获取所有不重复的相机型号
 
@@ -261,6 +268,35 @@ const ImageManager = ({
     onReset();
     setSelectedModel("all");
     setSortOrder("desc");
+    setHighlightedMonth(null);
+  };
+
+  // 处理时间点变化 - 滚动到对应月份
+  const handleTimePointChange = (date, isUnknown) => {
+    let targetMonth;
+    
+    if (isUnknown) {
+      targetMonth = "未知时间";
+    } else if (date) {
+      const yearDate = new Date(date);
+      targetMonth = `${yearDate.getFullYear()}年${yearDate.getMonth() + 1}月`;
+    } else {
+      // 如果没有选择时间点，不执行任何操作
+      setHighlightedMonth(null);
+      return;
+    }
+    
+    // 设置高亮月份
+    setHighlightedMonth(targetMonth);
+    
+    // 检查该月份的引用是否存在
+    if (monthRefs.current[targetMonth]) {
+      // 滚动到该月份
+      monthRefs.current[targetMonth].scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
   };
 
   // 预处理所有查看器图片数据，在图片过滤或排序后重新计算
@@ -415,6 +451,12 @@ const ImageManager = ({
     setSelectedImage(imageWithDefaultDate);
   };
 
+  // 设置月份引用
+  useEffect(() => {
+    // 初始化引用对象
+    monthRefs.current = {};
+  }, []);
+
   return (
     <MainContainer>
       <ContentContainer>
@@ -433,6 +475,16 @@ const ImageManager = ({
             editable={true}
             onSave={handleSaveNote}
           />
+          
+          {/* 添加时间轴导航组件 */}
+          {!showUploader && images.length > 0 && (
+            <TimelineNav 
+              images={images} 
+              onTimePointChange={handleTimePointChange}
+              sortDirection={sortOrder}
+            />
+          )}
+          
           {showUploader ? (
             <UploadBox
               onClick={() => inputRef.current?.click()}
@@ -514,8 +566,33 @@ const ImageManager = ({
               </Stats>
 
               {Object.entries(groupedImages).map(([monthKey, monthImages]) => (
-                <MonthGroup key={monthKey}>
-                  <h2>{monthKey}</h2>
+                <MonthGroup 
+                  key={monthKey}
+                  ref={el => monthRefs.current[monthKey] = el}
+                  style={{
+                    backgroundColor: monthKey === highlightedMonth ? 'rgba(24, 144, 255, 0.05)' : 'transparent',
+                    borderLeft: monthKey === highlightedMonth ? '4px solid #1890ff' : 'none',
+                    transition: 'background-color 0.5s ease, border-left 0.5s ease',
+                    paddingLeft: monthKey === highlightedMonth ? '12px' : '16px',
+                    scrollMarginTop: '90px' // 滚动时留出顶部空间
+                  }}
+                >
+                  <h2 style={{ 
+                    color: monthKey === highlightedMonth ? '#1890ff' : 'inherit',
+                    transition: 'color 0.5s ease'
+                  }}>
+                    {monthKey}
+                    {monthKey === highlightedMonth && 
+                      <span style={{ 
+                        marginLeft: '10px', 
+                        fontSize: '0.8em',
+                        color: '#1890ff',
+                        animation: 'pulse 2s infinite'
+                      }}>
+                        ◀ 当前选择
+                      </span>
+                    }
+                  </h2>
 
                   <ImageGrid>
                     {monthImages.map((image, index) => (

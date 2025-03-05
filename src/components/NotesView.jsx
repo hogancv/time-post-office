@@ -89,7 +89,6 @@ const NotesView = ({ images, onMetadataUpdate }) => {
           img.dateCreated === "未知" ||
           isNaN(new Date(img.dateCreated).getTime())
       );
-      console.log("未知日期图片数量:", targetImages.length);
     } else if (date) {
       // 查找指定年月的图片
       const year = date.getFullYear();
@@ -111,19 +110,16 @@ const NotesView = ({ images, onMetadataUpdate }) => {
         }
         return false;
       });
-      console.log(`${year}年${month}月图片数量:`, targetImages.length);
     }
 
     // 如果找不到匹配的图片，提前返回
     if (!targetImages || targetImages.length === 0) {
-      console.log("未找到匹配的图片");
       return;
     }
 
     // 记录当前高亮的图片路径
     const highlightPaths = targetImages.map((img) => img.path || img.url);
     setActiveTimeItems(highlightPaths);
-    console.log("需要高亮的图片数量:", highlightPaths.length);
 
     // 延迟执行DOM操作，确保React已经完成渲染
     setTimeout(() => {
